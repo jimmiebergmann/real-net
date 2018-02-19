@@ -12,10 +12,10 @@ REALNET_DEBUG_OBJ := $(patsubst %.cpp,$(OBJ_FOLDER)/debug/realnet/%.o,$(notdir $
 all: release debug test
 
 $(REALNET_RELEASE_OBJ): $(REALNET_CPP)  
-	$(CXX) -c $< -o $@
+	$(CXX) -std=c++11 -c $< -o $@
 
 $(REALNET_DEBUG_OBJ): $(REALNET_CPP)  
-	$(CXX) -g -c $< -o $@
+	$(CXX) -std=c++11 -g -c $< -o $@
 
 
 release: release_folders archive_release
@@ -34,6 +34,10 @@ release_folders: folders
 	mkdir -p $(OBJ_FOLDER)/release/realnet
 debug_folders: folders
 	mkdir -p $(OBJ_FOLDER)/debug/realnet
+test_release_folders: folders
+	mkdir -p $(OBJ_FOLDER)/release/test
+test_debug_folders: folders
+	mkdir -p $(OBJ_FOLDER)/debug/test
 
 
 .PHONY: clean clean_all clean_release clean_debug
@@ -48,22 +52,25 @@ clean_release:
 clean_debug:
 	rm -r -f $(OBJ_FOLDER)/debug/realnet
 
+clean_test: clean_test_release clean_test_debug
+clean_test_release:
+	rm -r -f $(OBJ_FOLDER)/release/test
+clean_test_debug:
+	rm -r -f $(OBJ_FOLDER)/debug/test
 
 
-#test: folders ../obj/test/test.o ../obj/test/Yaml.o
-#	$(CXX) -o ../bin/test ../obj/test/test.o ../obj/test/Yaml.o  -s  googletest/googletest/make/gtest_main.a -lpthread
+$(OBJ_FOLDER)/release/test/test.o: test/test.cpp
+	$(CXX) -std=c++11 -Itest/googletest/googletest/include -Iinclude -c $< -o $@
 
-#../obj/test/test.o: test.cpp
-#	$(CXX) -std=c++11 -Igoogletest/googletest/include -I../yaml -c test.cpp -o ../obj/test/test.o
+$(OBJ_FOLDER)/debug/test/test.o: test/test.cpp
+	$(CXX) -std=c++11 -g -Itest/googletest/googletest/include -Iinclude -c $< -o $@
 
-#../obj/test/Yaml.o: ../yaml/Yaml.cpp
-#	$(CXX) -std=c++11 -I../yaml -c ../yaml/Yaml.cpp -o ../obj/test/Yaml.o
 
-#folders:
-#	mkdir -p ../bin
-#	mkdir -p ../obj/test
-	
+test_release: release test_release_folders $(OBJ_FOLDER)/release/test/test.o
+	$(CXX) -o $(BIN_FOLDER)/test $(OBJ_FOLDER)/release/test/test.o -s test/googletest/googletest/make/gtest_main.a lib/realnet.a -lpthread
 
-#.PHONY: clean
-#clean:
-#	rm -r ../obj
+test_debug: debug test_debug_folders $(OBJ_FOLDER)/debug/test/test.o
+	$(CXX) -o $(BIN_FOLDER)/test-d $(OBJ_FOLDER)/debug/test/test.o -s test/googletest/googletest/make/gtest_main.a lib/realnet-d.a -lpthread
+
+test: test_release
+

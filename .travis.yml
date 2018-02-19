@@ -17,7 +17,7 @@ script:
   - make
   - cd ../../../../
   - make test
-  - cd bin
+  - cd bin/
   - valgrind --leak-check=full --track-origins=yes --error-exitcode=1 ./test
 
 notifications:

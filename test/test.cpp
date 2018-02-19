@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-
 TEST(foo, bar)
 {
+	EXPECT_EQ(10, 10);
 }
 
 int main(int argc, char **argv)

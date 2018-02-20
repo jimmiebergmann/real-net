@@ -1,8 +1,40 @@
 #include "gtest/gtest.h"
+#include "gtest/gtest_prod.h"
 
-TEST(foo, bar)
+namespace Tests
 {
-	EXPECT_EQ(10, 10);
+    class Address;
+}
+
+#define TEST_FRIEND \
+    friend class Tests::Address; \
+
+#include <Address.hpp>
+
+namespace Tests
+{
+    class Address
+    {
+    public:
+
+        Address()
+        {
+            Net::Address address;
+            address.m_Bytes[0] = 120;
+        }
+
+    };
+}
+
+
+
+
+
+TEST(Address, 1)
+{
+    Tests::Address test;
+
+	//EXPECT_EQ(10, 10);
 }
 
 int main(int argc, char **argv)

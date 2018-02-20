@@ -25,26 +25,6 @@
 
 #pragma once
 
-#include <core/Build.hpp>
-#include <string>
-
-namespace Net
-{
-
-    class Address
-    {
-
-    public:
-
-
-
-        Address();
-
-    private:
-
-        TEST_FRIEND;
-
-        unsigned char m_Bytes[10];
-    };
-
-}
+#ifndef TEST_FRIEND
+#define TEST_FRIEND
+#endif

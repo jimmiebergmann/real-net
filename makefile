@@ -70,7 +70,7 @@ test_release: release test_release_folders $(OBJ_FOLDER)/release/test/test.o
 	$(CXX) -o $(BIN_FOLDER)/test $(OBJ_FOLDER)/release/test/test.o -s test/googletest/googletest/make/gtest_main.a lib/realnet.a -lpthread
 
 test_debug: debug test_debug_folders $(OBJ_FOLDER)/debug/test/test.o
-	$(CXX) -o $(BIN_FOLDER)/test-d $(OBJ_FOLDER)/debug/test/test.o -s test/googletest/googletest/make/gtest_main.a lib/realnet-d.a -lpthread
+	$(CXX) -g -o $(BIN_FOLDER)/test-d $(OBJ_FOLDER)/debug/test/test.o test/googletest/googletest/make/gtest_main.a lib/realnet-d.a -lpthread
 
-test: test_release
+test: test_release test_debug
 

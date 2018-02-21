@@ -50,6 +50,27 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="../../include/Address.hpp" />
+		<Unit filename="../../include/Client.hpp" />
+		<Unit filename="../../include/Entity.hpp" />
+		<Unit filename="../../include/Message.hpp" />
+		<Unit filename="../../include/MessageListener.hpp" />
+		<Unit filename="../../include/Server.hpp" />
+		<Unit filename="../../include/Variable.hpp" />
+		<Unit filename="../../include/core/Build.hpp" />
+		<Unit filename="../../include/core/EntityManager.hpp" />
+		<Unit filename="../../include/core/Packet.hpp" />
+		<Unit filename="../../include/core/UdpSocket.hpp" />
+		<Unit filename="../../source/Address.cpp" />
+		<Unit filename="../../source/Client.cpp" />
+		<Unit filename="../../source/Entity.cpp" />
+		<Unit filename="../../source/Message.cpp" />
+		<Unit filename="../../source/MessageListener.cpp" />
+		<Unit filename="../../source/Server.cpp" />
+		<Unit filename="../../source/Variable.cpp" />
+		<Unit filename="../../source/core/EntityManager.cpp" />
+		<Unit filename="../../source/core/Packet.cpp" />
+		<Unit filename="../../source/core/UdpSocket.cpp" />
 		<Extensions>
 			<envvars />
 			<code_completion />

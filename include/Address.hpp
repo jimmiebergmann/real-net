@@ -36,8 +36,6 @@ namespace Net
 
     public:
 
-
-
         Address();
 
     private:

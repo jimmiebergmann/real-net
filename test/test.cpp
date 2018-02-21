@@ -1,40 +1,25 @@
 #include "gtest/gtest.h"
-#include "gtest/gtest_prod.h"
-
-namespace Tests
-{
-    class Address;
-}
+#define REALNET_TEST
 
 #define TEST_FRIEND \
-    friend class Tests::Address; \
+    FRIEND_TEST(Address, foo);
 
 #include <Address.hpp>
 
-namespace Tests
+
+namespace Net
 {
-    class Address
+    namespace Core
     {
-    public:
+    }
 
-        Address()
-        {
-            Net::Address address;
-            address.m_Bytes[0] = 120;
-        }
+    TEST(Address, foo)
+    {
+        Net::Address a;
+        a.m_Bytes[0] = 1;
 
-    };
-}
-
-
-
-
-
-TEST(Address, 1)
-{
-    Tests::Address test;
-
-	//EXPECT_EQ(10, 10);
+        EXPECT_EQ(a.m_Bytes[0], 1);
+    }
 }
 
 int main(int argc, char **argv)

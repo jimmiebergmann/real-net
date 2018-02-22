@@ -23,26 +23,182 @@
 *
 */
 
+/*
+Resources:
+ - https://stackoverflow.com/questions/6027989/how-to-set-sockaddr-in6sin6-addr-byte-order-to-network-byte-order
+ - https://www.binarytides.com/hostname-to-ip-address-c-sockets-linux/
+ - http://man7.org/linux/man-pages/man3/getaddrinfo.3.html
+ - https://msdn.microsoft.com/en-us/library/windows/desktop/ms738520(v=vs.85).aspx
+*/
+
 #pragma once
 
 #include <core/Build.hpp>
 #include <string>
+#include <initializer_list>
 
 namespace Net
 {
 
+    /**
+    * @breif Address class containing information about ipv4 or ipv6 addresses.
+    *
+    */
     class Address
     {
 
     public:
 
-        Address();
+        enum eType
+        {
+            Any,
+            Ipv4,
+            Ipv6
+        };
+
+        /**
+        * @breif Constructor.
+        *
+        * If a hostname is passed, the function Hostname is internally called.
+        * If ipv6List.size() != 16, address is initialized as zero.
+        *
+        * @param hostname Initialize address by hostname.
+        * @param Ipv4_* Initialize address as ipv4.
+        * @param ipv6List Initialize address as ipv6.
+        *
+        */
+        Address(const eType type = Any);
+        Address(const std::string & hostname, const eType family = Any);
+        Address(const unsigned char Ipv4_1, const unsigned char Ipv4_2, const unsigned char Ipv4_3, const unsigned char Ipv4_4);
+        Address(const std::initializer_list<unsigned char> & ipv6List);
+
+        /**
+        * @breif Initialize address by hostname.
+        *
+        * @param hostname Name of host.
+        *
+        * @return True of succeeded, false if hostname is unknown for given ip version.
+        *
+        */
+        bool Hostname(const std::string & hostname, const eType family = Any);
+
+        /**
+        * @breif Clear address.
+        *
+        */
+        void Zero();
+
+        /**
+        * @breif Initialize address as loopback.
+        *
+        * @param family Ip version of loopback address.
+        *               "Any" will give no result.
+        *
+        */
+        void Loopback(const eType family = Ipv6);
+
+        /**
+        * @breif Set individual bytes.
+        *
+        * @param index Index of byte to set.
+        * @param byte new byte value.
+        *
+        */
+        void SetByte(const size_t index, const unsigned char byte);
+
+        /**
+        * @breif Get type of address.
+        *
+        */
+        eType Type() const;
+
+        /**
+        * @breif Check if address is loopback.
+        *
+        */
+        bool IsLoopback() const;
+
+        /**
+        * @breif Check if address is zero.
+        *
+        */
+        bool IsZero() const;
+
+        /**
+        * @breif Get address bytes.
+        *
+        * @return Reference to byte array.
+        *
+        */
+        unsigned char const (& Bytes() const)[16];
+
+        /**
+        * @breif Get address as readable string.
+        *
+        */
+        std::string String() const;
+
+        /**
+        * @breif The "none" address contains only "zero" bytes.
+        *
+        */
+        static const Address None;
 
     private:
 
-        TEST_FRIEND;
+        /**
+        * @breif Allow private tests.
+        *
+        */
+        TEST_FRIEND
 
-        unsigned char m_Bytes[10];
+        eType           m_Type;         ///< Type of address.
+        unsigned char   m_Bytes[16];    ///< Bytes describing address.
+
+    };
+
+
+    /**
+    * @breif Socket address combines an address and a port.
+    *
+    */
+    class SocketAddress
+    {
+
+    public:
+
+        /**
+        * @breif Constructor.
+        *
+        * @param address Address to copy, to socket address.
+        * @param port Port to copy, to socket address.
+        *
+        */
+        SocketAddress(const Address & address = Address::None, const unsigned short port = 0);
+
+        /**
+        * @breif Get reference to address.
+        *
+        */
+        Address & AddressRef();
+
+        /**
+        * @breif Get reference to port number.
+        *
+        */
+        unsigned short & PortRef();
+
+    private:
+
+        /**
+        * @breif Allow private tests.
+        *
+        */
+        TEST_FRIEND
+
+        Address         m_Address;  ///< Socket address.
+        unsigned short  m_Port;     ///< Socket port.
+
     };
 
 }

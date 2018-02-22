@@ -25,53 +25,23 @@
 
 #pragma once
 
-#include <Address.hpp>
-#include <Peer.hpp>
+#include <core/Build.hpp>
 
 namespace Net
 {
 
-    class Server
+    class Peer
     {
 
     public:
-
-        enum eHostStatus
-        {
-            Success,
-            AlreadyHosted,
-            FailedPort
-        };
 
         /**
         * @breif Constructor.
         *
         */
-        Server();
+        Peer(const unsigned short id);
 
-        /**
-        * @breif Host server. No action if server already is hosted.
-        *
-        * @param port Hosting port.
-        * @param family Specify connection family. Ipv4/Ipv6/Any.
-        *               "Any" will allow both Ipv4 and Ipv6 connections.
-        *
-        * @return Success if succeeded, else FailedPort if given port is in use,
-        *         AlreadyHosted if server already is hosted.
-        *
-        */
-        eHostStatus Host(const unsigned short port, Address::eType family = Address::Any);
-
-        /**
-        * @breif Stop hosted server. No action if not hosted.
-        *
-        */
-        void Stop();
-
-        // Virtual functions
-        virtual bool OnPeerPreConnect(Peer & peer) = 0;
-        virtual void OnPeerConnect(Peer & peer) = 0;
-        virtual void OnPeerDisconnect(Peer & peer) = 0;
+        unsigned short Id() const;
 
     private:
 
@@ -81,7 +51,7 @@ namespace Net
         */
         TEST_FRIEND
 
-        bool m_Hosted; ///< Is the server currently hosted?
+        unsigned short m_Id; ///< Id of peer.
 
     };
 

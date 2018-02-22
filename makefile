@@ -12,10 +12,10 @@ REALNET_DEBUG_OBJ := $(patsubst %.cpp,$(OBJ_FOLDER)/debug/realnet/%.o, $(REALNET
 all: release debug test
 
 $(REALNET_RELEASE_OBJ): obj/release/realnet/%.o: %.cpp
-	$(CXX) -std=c++11 -c -Iinclude $< -o $@
+	$(CXX) -std=c++11 -Wall -pedantic -c -Iinclude $< -o $@
 
 $(REALNET_DEBUG_OBJ): obj/debug/realnet/%.o: %.cpp
-	$(CXX) -std=c++11 -g -c -Iinclude $< -o $@
+	$(CXX) -std=c++11 -Wall -pedantic -g -c -Iinclude $< -o $@
 
 
 release: release_folders archive_release
@@ -60,10 +60,10 @@ clean_test_debug: clean_debug
 
 
 $(OBJ_FOLDER)/release/test/test.o: test/test.cpp
-	$(CXX) -std=c++11 -Itest/googletest/googletest/include -Iinclude -c $< -o $@
+	$(CXX) -std=c++11 -Wall -pedantic -Itest/googletest/googletest/include -Iinclude -c $< -o $@
 
 $(OBJ_FOLDER)/debug/test/test.o: test/test.cpp
-	$(CXX) -std=c++11 -g -Itest/googletest/googletest/include -Iinclude -c $< -o $@
+	$(CXX) -std=c++11 -Wall -pedantic -g -Itest/googletest/googletest/include -Iinclude -c $< -o $@
 
 
 test_release: release test_release_folders $(OBJ_FOLDER)/release/test/test.o

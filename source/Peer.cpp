@@ -23,35 +23,19 @@
 *
 */
 
-#include <Server.hpp>
+#include <Peer.hpp>
 
 namespace Net
 {
 
-    Server::Server() :
-        m_Hosted(false)
+    Peer::Peer(const unsigned short id) :
+        m_Id(id)
     {
     }
 
-    Server::eHostStatus Server::Host(const unsigned short port, Address::eType family)
+    unsigned short Peer::Id() const
     {
-        if(m_Hosted == true)
-        {
-            return AlreadyHosted;
-        }
-
-        m_Hosted = true;
-        return Success;
-    }
-
-    void Server::Stop()
-    {
-        if(m_Hosted == false)
-        {
-            return;
-        }
-
-        m_Hosted = false;
+        return m_Id;
     }
 
 }

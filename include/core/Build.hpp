@@ -25,6 +25,16 @@
 
 #pragma once
 
+// Define platform
+/*#if defined( _WIN32 ) || defined( __WIN32__ ) || defined( _WIN64 ) || defined( __WIN64__ )
+	#define BIT_PLATFORM_WINDOWS
+#elif*/#if defined(linux) || defined(__linux)
+	#define REALNET_PLATFORM_LINUX
+#else
+	#error No platform defined.
+#endif
+
+// Define test friend.
 #ifndef TEST_FRIEND
 #define TEST_FRIEND
 #endif

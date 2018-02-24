@@ -64,12 +64,14 @@ namespace Net
         * @param hostname Initialize address by hostname.
         * @param Ipv4_* Initialize address as ipv4.
         * @param ipv6List Initialize address as ipv6.
+        * @param ipv6Bytes Pointer to 16 bytes. Initializes as ipv6.
         *
         */
         Address(const eType type = Any);
         Address(const std::string & hostname, const eType family = Any);
         Address(const unsigned char Ipv4_1, const unsigned char Ipv4_2, const unsigned char Ipv4_3, const unsigned char Ipv4_4);
         Address(const std::initializer_list<unsigned char> & ipv6List);
+        Address(const unsigned char * ipv6Bytes);
 
         /**
         * @breif Initialize address.
@@ -77,6 +79,7 @@ namespace Net
         * @param hostname Name of host.
         * @param Ipv4_* Initialize address as ipv4.
         * @param ipv6List Initialize address as ipv6.
+        * @param ipv6Bytes Pointer to 16 bytes. Initializes as ipv6.
         *
         * @return True if succeeded, false if hostname is unknown, or ipv6List.size() != 16.
         *
@@ -84,6 +87,7 @@ namespace Net
         bool Set(const std::string & hostname, const eType family = Any);
         void Set(const unsigned char Ipv4_1, const unsigned char Ipv4_2, const unsigned char Ipv4_3, const unsigned char Ipv4_4);
         bool Set(const std::initializer_list<unsigned char> & ipv6List);
+        void Set(const unsigned char * ipv6Bytes);
 
         /**
         * @breif Clear address.

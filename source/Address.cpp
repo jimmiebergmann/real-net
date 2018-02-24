@@ -62,6 +62,11 @@ namespace Net
         Set(ipv6List);
     }
 
+    Address::Address(const unsigned char * ipv6Bytes)
+    {
+        Set(ipv6Bytes);
+    }
+
     bool Address::Set(const std::string & hostname, const eType family)
     {
         // Get address info by hints.
@@ -146,6 +151,12 @@ namespace Net
 
         std::copy(ipv6List.begin(), ipv6List.end(), m_Bytes);
         return true;
+    }
+
+    void Address::Set(const unsigned char * ipv6Bytes)
+    {
+        m_Type = Ipv6;
+        memcpy(m_Bytes, ipv6Bytes, 16);
     }
 
     void Address::SetZero()

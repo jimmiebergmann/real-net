@@ -2,6 +2,7 @@
 #include <cstring>
 #include <chrono>
 #include <thread>
+#include <iostream>
 
 #define REALNET_TEST
 
@@ -259,15 +260,105 @@ namespace Net
             EXPECT_FALSE(selector.Select(&socket, Net::Seconds(1.0f)));
         }
         {
-
-            for(size_t i = 0; i < 2; i++)
+            const size_t sendSize = 13;
+            const char sendData[sendSize] = "Hello world!";
             {
-                const Net::Address::eType ipType = (i == 0 ? Net::Address::Ipv4 : Net::Address::Ipv6);
                 Net::Core::SocketSelector selector;
                 Net::Core::UdpSocket socket;
-                EXPECT_NO_THROW(socket.Open(12312, ipType));
-                EXPECT_EQ(socket.Send(NULL, 0, Net::SocketAddress(Net::Address::Loopback(ipType), 12312)), 0 );
+                EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv4));
+                EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
                 EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
+            }
+            {
+                Net::Core::SocketSelector selector;
+                Net::Core::UdpSocket socket;
+                EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv6));
+                EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), sendSize );
+                EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
+            }
+            {
+                Net::Core::SocketSelector selector;
+                Net::Core::UdpSocket socket;
+                EXPECT_NO_THROW(socket.Open(12312, Net::Address::Any));
+                Net::Core::UdpSocket sendSocket;
+                EXPECT_NO_THROW(sendSocket.Open(12313, Net::Address::Ipv4));
+
+                EXPECT_EQ(sendSocket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
+                EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
+            }
+            {
+                Net::Core::SocketSelector selector;
+                Net::Core::UdpSocket socket;
+                EXPECT_NO_THROW(socket.Open(12312, Net::Address::Any));
+                EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
+                EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
+            }
+        }
+        {
+            Net::Core::UdpSocket socket;
+            EXPECT_NO_THROW(socket.Open(12312));
+            EXPECT_NO_THROW(socket.SetBlocking(false));
+
+            Net::SocketAddress socketAddress;
+            char data[32];
+            EXPECT_EQ(socket.Receive(data, 32, socketAddress), -1);
+        }
+        {
+            {
+                Net::Core::UdpSocket socket;
+                EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv4));
+
+                const size_t sendSize = 13;
+                const char sendData[sendSize] = "Hello world!";
+                EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
+
+                Net::SocketAddress socketAddress;
+                char data[32];
+                EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
+                EXPECT_STREQ(data, "Hello world!");
+                EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv4);
+                std::cout << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+            }
+            {
+                Net::Core::UdpSocket socket;
+                EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv6));
+
+                const size_t sendSize = 13;
+                const char sendData[sendSize] = "Hello world!";
+                EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), sendSize );
+
+                Net::SocketAddress socketAddress;
+                char data[32];
+                EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
+                EXPECT_STREQ(data, "Hello world!");
+                EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv6);
+                std::cout << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+            }
+            {
+                Net::Core::UdpSocket socket;
+                EXPECT_NO_THROW(socket.Open(12312, Net::Address::Any));
+
+                const size_t sendSize = 13;
+                const char sendData[sendSize] = "Hello world!";
+                {
+                    EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
+                    Net::SocketAddress socketAddress;
+                    char data[32];
+                    EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
+                    EXPECT_STREQ(data, "Hello world!");
+                    EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv6);
+                    std::cout << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                }
+                {
+                    EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), sendSize );
+                    Net::SocketAddress socketAddress;
+                    char data[32];
+                    EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
+                    EXPECT_STREQ(data, "Hello world!");
+                    EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv6);
+                    std::cout << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                }
+
             }
         }
     }

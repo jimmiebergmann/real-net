@@ -101,8 +101,6 @@ namespace Net
                     throw std::system_error(GetLastSystemError(), std::system_category(), "Failed to bind socket to port " + std::to_string(port) +  ".");
                 }
             }
-
-
         }
 
         void UdpSocket::Close()
@@ -116,12 +114,6 @@ namespace Net
 
         int UdpSocket::Send(const void * data, const size_t size, const SocketAddress & socketAddress)
         {
-            /*
-            ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
-               const struct sockaddr *dest_addr, socklen_t addrlen)
-            */
-
-
             const Address & address = socketAddress.GetIp();
             const unsigned short port = socketAddress.GetPort();
             int result = 0;
@@ -157,9 +149,66 @@ namespace Net
 
         int UdpSocket::Receive(void * data, const size_t size, SocketAddress & socketAddress)
         {
-            //ssize_t
+            struct sockaddr_storage from;
+            socklen_t fromLength = sizeof(from);
+            int result = recvfrom(m_Handle, data, size, 0, (struct sockaddr*)&from, &fromLength);
+            if(result < 0)
+            {
+                return result;
+            }
 
-            return 0;
+            // Get sender address.
+            switch (from.ss_family)
+            {
+                case AF_INET:
+                {
+                    struct sockaddr_in * pIp = (struct sockaddr_in*)&from;
+                    const unsigned int ipv4 = ntohl(static_cast<unsigned int>(pIp->sin_addr.s_addr));
+
+                    Address address(static_cast<unsigned char>(ipv4 >> 24),
+                                    static_cast<unsigned char>(ipv4 >> 16),
+                                    static_cast<unsigned char>(ipv4 >> 8),
+                                    static_cast<unsigned char>(ipv4));
+                    socketAddress.SetIp(address);
+                    socketAddress.SetPort(ntohs(pIp->sin_port));
+                }
+                break;
+                case AF_INET6:
+                {
+                    struct sockaddr_in6 * pIp = (struct sockaddr_in6*)&from;
+                    const unsigned char * ipv6 = static_cast<unsigned char *>(pIp->sin6_addr.s6_addr);
+                    Address address(ipv6);
+                    socketAddress.SetIp(address);
+                    socketAddress.SetPort(ntohs(pIp->sin6_port));
+                }
+                break;
+                default:
+                    break;
+            }
+
+            return result;
+        }
+
+        void UdpSocket::SetBlocking(const bool status)
+        {
+        #if defined(REALNET_PLATFORM_WINDOWS)
+            unsigned long mode = blocking ? 0 : 1;
+            if(ioctlsocket(m_Handle, FIONBIO, &mode) != 0)
+            {
+                throw std::system_error(GetLastSystemError(), std::system_category(), "Failed set socket blocking.");
+            }
+        #elif defined(REALNET_PLATFORM_LINUX)
+            int flags = fcntl(m_Handle, F_GETFL, 0);
+            if (flags == -1)
+            {
+               throw std::system_error(GetLastSystemError(), std::system_category(), "Failed get socket blocking.");
+            }
+            flags = status ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
+            if(fcntl(m_Handle, F_SETFL, flags) != 0)
+            {
+                throw std::system_error(GetLastSystemError(), std::system_category(), "Failed set socket blocking.");
+            }
+        #endif
         }
 
         SocketHandle UdpSocket::GetHandle()

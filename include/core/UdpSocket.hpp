@@ -56,7 +56,7 @@ namespace Net
             * @throw std::system_error, containing socket error code.
             *
             */
-            UdpSocket(const unsigned short port, Address::eType family);
+            UdpSocket(const unsigned short port, Address::eType family = Address::Any);
 
             /**
             * @breif Destructor.
@@ -71,7 +71,7 @@ namespace Net
             * @throw std::system_error if failing, containing socket error code.
             *
             */
-            void Open(const unsigned short port, Address::eType family);
+            void Open(const unsigned short port, Address::eType family = Address::Any);
 
             /**
             * @breif Close open UDP socket.
@@ -102,6 +102,14 @@ namespace Net
             *
             */
             int Receive(void * data, const size_t size, SocketAddress & socketAddress);
+
+            /**
+            * @breif Set blocking status.
+            *
+            * @throw std::system_error if failing, containing socket error code.
+            *
+            */
+            void SetBlocking(const bool status);
 
             /**
             * @breif Get socket handle.

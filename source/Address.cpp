@@ -96,6 +96,7 @@ namespace Net
             if(pCurrent->ai_family == AF_UNSPEC)
             {
                 SetZero();
+                freeaddrinfo(pResult);
                 return false;
             }
             else if(pCurrent->ai_family == AF_INET)

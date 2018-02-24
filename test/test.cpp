@@ -252,6 +252,10 @@ namespace Net
 
             EXPECT_NO_THROW(socket_1.Open(12312, Net::Address::Ipv4));
             EXPECT_THROW(socket_2.Open(12312, Net::Address::Ipv4), std::system_error);
+#if defined(REALNET_PLATFORM_LINUX)
+            EXPECT_EQ(Net::Core::GetLastSystemError(), EADDRINUSE);
+            errno = 0;
+#endif // defined
         }
         {
             Net::Core::SocketSelector selector;
@@ -274,6 +278,7 @@ namespace Net
                 Net::Core::UdpSocket socket;
                 EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv6));
                 EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), sendSize );
+                std::cout << "Last error: " << Net::Core::GetLastSystemError() << std::endl;
                 EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
             }
             {
@@ -310,14 +315,18 @@ namespace Net
 
                 const size_t sendSize = 13;
                 const char sendData[sendSize] = "Hello world!";
-                EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
+                size_t sentSize = 0;
+                EXPECT_EQ(sentSize = socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
 
-                Net::SocketAddress socketAddress;
-                char data[32];
-                EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
-                EXPECT_STREQ(data, "Hello world!");
-                EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv4);
-                std::cout << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                if(sentSize >= 0)
+                {
+                    Net::SocketAddress socketAddress;
+                    char data[32];
+                    EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
+                    EXPECT_STREQ(data, "Hello world!");
+                    EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv4);
+                    std::cout << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                }
             }
             {
                 Net::Core::UdpSocket socket;
@@ -325,14 +334,18 @@ namespace Net
 
                 const size_t sendSize = 13;
                 const char sendData[sendSize] = "Hello world!";
-                EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), sendSize );
+                size_t sentSize = 0;
+                EXPECT_EQ(sentSize = socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), sendSize );
 
-                Net::SocketAddress socketAddress;
-                char data[32];
-                EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
-                EXPECT_STREQ(data, "Hello world!");
-                EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv6);
-                std::cout << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                if(sentSize >= 0)
+                {
+                    Net::SocketAddress socketAddress;
+                    char data[32];
+                    EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
+                    EXPECT_STREQ(data, "Hello world!");
+                    EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv6);
+                    std::cout << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                }
             }
             {
                 Net::Core::UdpSocket socket;
@@ -341,22 +354,30 @@ namespace Net
                 const size_t sendSize = 13;
                 const char sendData[sendSize] = "Hello world!";
                 {
-                    EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
-                    Net::SocketAddress socketAddress;
-                    char data[32];
-                    EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
-                    EXPECT_STREQ(data, "Hello world!");
-                    EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv6);
-                    std::cout << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                    size_t sentSize = 0;
+                    EXPECT_EQ(sentSize = socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
+                    if(sentSize >= 0)
+                    {
+                        Net::SocketAddress socketAddress;
+                        char data[32];
+                        EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
+                        EXPECT_STREQ(data, "Hello world!");
+                        EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv6);
+                        std::cout << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                    }
                 }
                 {
-                    EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), sendSize );
-                    Net::SocketAddress socketAddress;
-                    char data[32];
-                    EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
-                    EXPECT_STREQ(data, "Hello world!");
-                    EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv6);
-                    std::cout << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                    size_t sentSize = 0;
+                    EXPECT_EQ(sentSize = socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), sendSize );
+                    if(sentSize >= 0)
+                    {
+                        Net::SocketAddress socketAddress;
+                        char data[32];
+                        EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
+                        EXPECT_STREQ(data, "Hello world!");
+                        EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv6);
+                        std::cout << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                    }
                 }
 
             }

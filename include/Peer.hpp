@@ -26,22 +26,41 @@
 #pragma once
 
 #include <core/Build.hpp>
+#include <Address.hpp>
 
 namespace Net
 {
 
+    /**
+    * @breif Peer class describing connecting peer to server.
+    *
+    */
     class Peer
     {
 
     public:
 
+        friend class Server;
+
+        /**
+        * @breif Get id of peer.
+        *
+        */
+        unsigned short GetId() const;
+
+        /**
+        * @breif Get socket address of peer.
+        *
+        */
+        const SocketAddress & GetSocketAddress() const;
+
+    protected:
+
         /**
         * @breif Constructor.
         *
         */
-        Peer(const unsigned short id);
-
-        unsigned short Id() const;
+        Peer(const unsigned short id, const SocketAddress & socketAddress);
 
     private:
 
@@ -51,7 +70,8 @@ namespace Net
         */
         TEST_FRIEND
 
-        unsigned short m_Id; ///< Id of peer.
+        unsigned short  m_Id;               ///< Id of peer.
+        SocketAddress   m_SocketAddress;    ///< Ip and port of peer.
 
     };
 

@@ -23,25 +23,7 @@
 *
 */
 
-#include <Peer.hpp>
+#pragma once
 
-namespace Net
-{
-
-    Peer::Peer(const unsigned short id, const SocketAddress & socketAddress) :
-        m_Id(id),
-        m_SocketAddress(socketAddress)
-    {
-    }
-
-    unsigned short Peer::GetId() const
-    {
-        return m_Id;
-    }
-
-    const SocketAddress & Peer::GetSocketAddress() const
-    {
-        return m_SocketAddress;
-    }
-
-}
+#include <sys/time.h>
+#include <netdb.h>

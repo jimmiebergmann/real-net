@@ -23,25 +23,19 @@
 *
 */
 
-#include <Peer.hpp>
+#include <Server.hpp>
 
 namespace Net
 {
 
-    Peer::Peer(const unsigned short id, const SocketAddress & socketAddress) :
-        m_Id(id),
-        m_SocketAddress(socketAddress)
+    namespace Core
     {
-    }
 
-    unsigned short Peer::GetId() const
-    {
-        return m_Id;
-    }
+        ServerImp::ServerImp() :
+            m_Hosted(false)
+        {
+        }
 
-    const SocketAddress & Peer::GetSocketAddress() const
-    {
-        return m_SocketAddress;
     }
 
 }

@@ -28,9 +28,13 @@
 namespace Net
 {
 
-    Server::Server() :
-        m_Hosted(false)
+    Server::Server()
     {
+    }
+
+    Server::~Server()
+    {
+        Stop();
     }
 
     Server::eHostStatus Server::Host(const unsigned short port, Address::eType family)
@@ -41,6 +45,12 @@ namespace Net
         }
 
         m_Hosted = true;
+
+        m_ReceiveThread = std::thread([this]()
+        {
+
+        });
+
         return Success;
     }
 
@@ -52,6 +62,19 @@ namespace Net
         }
 
         m_Hosted = false;
+    }
+
+    bool Server::OnPeerPreConnect(Peer & peer)
+    {
+        return true;
+    }
+
+    void Server::OnPeerConnect(Peer & peer)
+    {
+    }
+
+    void Server::OnPeerDisconnect(Peer & peer)
+    {
     }
 
 }

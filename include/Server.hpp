@@ -25,17 +25,21 @@
 
 #pragma once
 
+#include <core/ServerImp.hpp>
 #include <Address.hpp>
-#include <Peer.hpp>
 
 namespace Net
 {
 
-    class Server
+    class Server : private Core::ServerImp
     {
 
     public:
 
+        /**
+        * @breif Return status of hosting.
+        *
+        */
         enum eHostStatus
         {
             Success,
@@ -48,6 +52,12 @@ namespace Net
         *
         */
         Server();
+
+        /**
+        * @breif Destructor.
+        *
+        */
+        virtual ~Server();
 
         /**
         * @breif Host server. No action if server already is hosted.
@@ -69,19 +79,11 @@ namespace Net
         void Stop();
 
         // Virtual functions
-        virtual bool OnPeerPreConnect(Peer & peer) = 0;
-        virtual void OnPeerConnect(Peer & peer) = 0;
-        virtual void OnPeerDisconnect(Peer & peer) = 0;
+        virtual bool OnPeerPreConnect(Peer & peer);
+        virtual void OnPeerConnect(Peer & peer);
+        virtual void OnPeerDisconnect(Peer & peer);
 
-    private:
-
-        /**
-        * @breif Allow private tests.
-        *
-        */
-        TEST_FRIEND
-
-        bool m_Hosted; ///< Is the server currently hosted?
+        TEST_FRIEND ///< Allow private tests.
 
     };
 

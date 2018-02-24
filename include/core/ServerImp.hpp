@@ -23,25 +23,36 @@
 *
 */
 
+#pragma once
+
+#include <core/Build.hpp>
 #include <Peer.hpp>
+#include <map>
+#include <thread>
 
 namespace Net
 {
 
-    Peer::Peer(const unsigned short id, const SocketAddress & socketAddress) :
-        m_Id(id),
-        m_SocketAddress(socketAddress)
+    namespace Core
     {
-    }
 
-    unsigned short Peer::GetId() const
-    {
-        return m_Id;
-    }
+        class ServerImp
+        {
 
-    const SocketAddress & Peer::GetSocketAddress() const
-    {
-        return m_SocketAddress;
-    }
+        protected:
 
+            /**
+            * @breif Constructor.
+            *
+            */
+            ServerImp();
+
+            bool                                m_Hosted;           ///< Is the server currently hosted?
+            std::map<unsigned short, Peer *>    m_PeerMap;          ///< Map of all connected peers.
+            std::thread                         m_ReceiveThread;   ///< Thread for receiving packets.
+
+            TEST_FRIEND ///< Allow private tests.
+        };
+
+    }
 }

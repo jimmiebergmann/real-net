@@ -59,7 +59,6 @@ namespace Net
         /**
         * @breif Constructor.
         *
-        * If a hostname is passed, the function Hostname is internally called.
         * If ipv6List.size() != 16, address is initialized as zero.
         *
         * @param hostname Initialize address by hostname.
@@ -73,20 +72,24 @@ namespace Net
         Address(const std::initializer_list<unsigned char> & ipv6List);
 
         /**
-        * @breif Initialize address by hostname.
+        * @breif Initialize address.
         *
         * @param hostname Name of host.
+        * @param Ipv4_* Initialize address as ipv4.
+        * @param ipv6List Initialize address as ipv6.
         *
-        * @return True of succeeded, false if hostname is unknown for given ip version.
+        * @return True if succeeded, false if hostname is unknown, or ipv6List.size() != 16.
         *
         */
-        bool Hostname(const std::string & hostname, const eType family = Any);
+        bool Set(const std::string & hostname, const eType family = Any);
+        void Set(const unsigned char Ipv4_1, const unsigned char Ipv4_2, const unsigned char Ipv4_3, const unsigned char Ipv4_4);
+        bool Set(const std::initializer_list<unsigned char> & ipv6List);
 
         /**
         * @breif Clear address.
         *
         */
-        void Zero();
+        void SetZero();
 
         /**
         * @breif Initialize address as loopback.
@@ -95,7 +98,7 @@ namespace Net
         *               "Any" will give no result.
         *
         */
-        void Loopback(const eType family = Ipv6);
+        void SetLoopback(const eType family = Ipv6);
 
         /**
         * @breif Set individual bytes.
@@ -110,7 +113,7 @@ namespace Net
         * @breif Get type of address.
         *
         */
-        eType Type() const;
+        eType GetType() const;
 
         /**
         * @breif Check if address is loopback.
@@ -130,19 +133,32 @@ namespace Net
         * @return Reference to byte array.
         *
         */
-        unsigned char const (& Bytes() const)[16];
+        unsigned char const (& GetBytes() const)[16];
 
         /**
         * @breif Get address as readable string.
         *
         */
-        std::string String() const;
+        std::string GetAsString() const;
 
         /**
-        * @breif The "none" address contains only "zero" bytes.
+        * @breif Compare with another address.
         *
         */
-        static const Address None;
+        bool operator == (const Address & address) const;
+
+        /**
+        * @breif The "Zero" address contains only "zero" bytes.
+        *
+        */
+        static const Address Zero;
+
+        /**
+        * @breif Return loopback address of given family.
+        *        Returns Zero if family = Any.
+        *
+        */
+        static const Address & Loopback(const eType family);
 
     private:
 
@@ -168,25 +184,43 @@ namespace Net
     public:
 
         /**
+        * @breif Socket address pair, containing address and port.
+        *
+        */
+        typedef std::pair<Address, unsigned short> Pair;
+
+        /**
         * @breif Constructor.
         *
         * @param address Address to copy, to socket address.
         * @param port Port to copy, to socket address.
         *
         */
-        SocketAddress(const Address & address = Address::None, const unsigned short port = 0);
+        SocketAddress(const Address & address = Address::Zero, const unsigned short port = 0);
 
         /**
-        * @breif Get reference to address.
+        * @breif Get IP of socket address.
         *
         */
-        Address & AddressRef();
+        const Address & GetIp() const;
 
         /**
-        * @breif Get reference to port number.
+        * @breif Set IP of socket address.
         *
         */
-        unsigned short & PortRef();
+        void SetIp(const Address & address);
+
+        /**
+        * @breif Get port of socket address.
+        *
+        */
+        unsigned short GetPort() const;
+
+        /**
+        * @breif Set port of socket address.
+        *
+        */
+        void SetPort(unsigned short port);
 
     private:
 

@@ -24,54 +24,45 @@
 */
 
 #include <Address.hpp>
+#include <core/platform/LinuxHeaders.hpp>
 #include <cstring>
 #include <sstream>
 #include <iomanip>
-#include <netdb.h>
 
 namespace Net
 {
 
     static const unsigned char g_ZeroArray16[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    static const Address g_LoopbackAddress[3] = {   Address({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
+                                                    Address(127, 0, 0, 1),
+                                                    Address({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}) };
 
 
     // Address class.
-    const Address Address::None;
+    const Address Address::Zero;
 
     Address::Address(const eType type)
     {
         m_Type = type;
-        Zero();
+        SetZero();
     }
 
     Address::Address(const std::string & hostname, const eType family)
-
     {
-        Hostname(hostname, family);
+        Set(hostname, family);
     }
 
     Address::Address(const unsigned char Ipv4_1, const unsigned char Ipv4_2, const unsigned char Ipv4_3, const unsigned char Ipv4_4)
     {
-        m_Type = Ipv4;
-        m_Bytes[0] = Ipv4_1;
-        m_Bytes[1] = Ipv4_2;
-        m_Bytes[2] = Ipv4_3;
-        m_Bytes[3] = Ipv4_4;
+        Set(Ipv4_1, Ipv4_2, Ipv4_3, Ipv4_4);
     }
 
     Address::Address(const std::initializer_list<unsigned char> & ipv6List)
     {
-        m_Type = Ipv6;
-        if(ipv6List.size() != 16)
-        {
-            Zero();
-            return;
-        }
-
-        std::copy(ipv6List.begin(), ipv6List.end(), m_Bytes);
+        Set(ipv6List);
     }
 
-    bool Address::Hostname(const std::string & hostname, const eType family)
+    bool Address::Set(const std::string & hostname, const eType family)
     {
         // Get address info by hints.
         struct addrinfo hints;
@@ -88,7 +79,7 @@ namespace Net
         struct addrinfo * pCurrent = NULL;
         if ((status = getaddrinfo( hostname.c_str(), NULL , &hints , &pResult)) != 0)
         {
-            Zero();
+            SetZero();
             return false;
         }
 
@@ -99,7 +90,7 @@ namespace Net
         {
             if(pCurrent->ai_family == AF_UNSPEC)
             {
-                Zero();
+                SetZero();
                 return false;
             }
             else if(pCurrent->ai_family == AF_INET)
@@ -125,7 +116,7 @@ namespace Net
 
         if(bestype == Any)
         {
-            Zero();
+            SetZero();
             return false;
         }
 
@@ -134,13 +125,36 @@ namespace Net
         return true;
     }
 
-    void Address::Zero()
+    void Address::Set(const unsigned char Ipv4_1, const unsigned char Ipv4_2, const unsigned char Ipv4_3, const unsigned char Ipv4_4)
+    {
+        m_Type = Ipv4;
+        m_Bytes[0] = Ipv4_1;
+        m_Bytes[1] = Ipv4_2;
+        m_Bytes[2] = Ipv4_3;
+        m_Bytes[3] = Ipv4_4;
+        memset(m_Bytes + 4, 0, 12);
+    }
+
+    bool Address::Set(const std::initializer_list<unsigned char> & ipv6List)
+    {
+        m_Type = Ipv6;
+        if(ipv6List.size() != 16)
+        {
+            SetZero();
+            return false;
+        }
+
+        std::copy(ipv6List.begin(), ipv6List.end(), m_Bytes);
+        return true;
+    }
+
+    void Address::SetZero()
     {
         m_Type = Any;
         memset(m_Bytes, 0 , 16);
     }
 
-    void Address::Loopback(const eType family)
+    void Address::SetLoopback(const eType family)
     {
         m_Type = family;
         if(m_Type == Ipv4)
@@ -170,7 +184,7 @@ namespace Net
         m_Bytes[index] = byte;
     }
 
-    Address::eType Address::Type() const
+    Address::eType Address::GetType() const
     {
         return m_Type;
     }
@@ -205,12 +219,12 @@ namespace Net
         return memcmp(m_Bytes, g_ZeroArray16, 16) == 0;
     }
 
-    unsigned char const (& Address::Bytes() const)[16]
+    unsigned char const (& Address::GetBytes() const)[16]
     {
         return m_Bytes;
     }
 
-    std::string Address::String() const
+    std::string Address::GetAsString() const
     {
         if(m_Type == Ipv4)
         {
@@ -245,6 +259,21 @@ namespace Net
         return "0";
     }
 
+    bool Address::operator == (const Address & address) const
+    {
+        if(m_Type != address.m_Type)
+        {
+            return false;
+        }
+
+        return memcmp(m_Bytes, address.m_Bytes, 16) == 0;
+    }
+
+    const Address & Address::Loopback(const eType family)
+    {
+        return g_LoopbackAddress[family];
+    }
+
 
     // Socket address class.
     SocketAddress::SocketAddress(const Address & address, const unsigned short port) :
@@ -253,14 +282,24 @@ namespace Net
     {
     }
 
-    Address & SocketAddress::AddressRef()
+    const Address & SocketAddress::GetIp() const
     {
         return m_Address;
     }
 
-    unsigned short & SocketAddress::PortRef()
+    void SocketAddress::SetIp(const Address & address)
+    {
+        m_Address = address;
+    }
+
+    unsigned short SocketAddress::GetPort() const
     {
         return m_Port;
+    }
+
+    void SocketAddress::SetPort(unsigned short port)
+    {
+        m_Port = port;
     }
 
 }

@@ -270,14 +270,14 @@ namespace Net
                 Net::Core::SocketSelector selector;
                 Net::Core::UdpSocket socket;
                 EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv4));
-                EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
+                EXPECT_EQ((int)socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), (int)sendSize );
                 EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
             }
             {
                 Net::Core::SocketSelector selector;
                 Net::Core::UdpSocket socket;
                 EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv6));
-                EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), sendSize );
+                EXPECT_EQ((int)socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), (int)sendSize );
                 std::cout << "Last error: " << Net::Core::GetLastSystemError() << std::endl;
                 EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
             }
@@ -288,14 +288,14 @@ namespace Net
                 Net::Core::UdpSocket sendSocket;
                 EXPECT_NO_THROW(sendSocket.Open(12313, Net::Address::Ipv4));
 
-                EXPECT_EQ(sendSocket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
+                EXPECT_EQ((int)sendSocket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), (int)sendSize );
                 EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
             }
             {
                 Net::Core::SocketSelector selector;
                 Net::Core::UdpSocket socket;
                 EXPECT_NO_THROW(socket.Open(12312, Net::Address::Any));
-                EXPECT_EQ(socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
+                EXPECT_EQ((int)socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), (int)sendSize );
                 EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
             }
         }
@@ -315,8 +315,8 @@ namespace Net
 
                 const size_t sendSize = 13;
                 const char sendData[sendSize] = "Hello world!";
-                size_t sentSize = 0;
-                EXPECT_EQ(sentSize = socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
+                int sentSize = 0;
+                EXPECT_EQ(sentSize = socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), (int)sendSize );
 
                 if(sentSize >= 0)
                 {
@@ -334,8 +334,8 @@ namespace Net
 
                 const size_t sendSize = 13;
                 const char sendData[sendSize] = "Hello world!";
-                size_t sentSize = 0;
-                EXPECT_EQ(sentSize = socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), sendSize );
+                int sentSize = 0;
+                EXPECT_EQ(sentSize = socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), (int)sendSize );
 
                 if(sentSize >= 0)
                 {
@@ -351,7 +351,7 @@ namespace Net
                 Net::Core::UdpSocket socket;
                 EXPECT_NO_THROW(socket.Open(12312, Net::Address::Any));
 
-                const size_t sendSize = 13;
+                const int sendSize = 13;
                 const char sendData[sendSize] = "Hello world!";
                 {
                     size_t sentSize = 0;
@@ -367,7 +367,7 @@ namespace Net
                     }
                 }
                 {
-                    size_t sentSize = 0;
+                    int sentSize = 0;
                     EXPECT_EQ(sentSize = socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), sendSize );
                     if(sentSize >= 0)
                     {

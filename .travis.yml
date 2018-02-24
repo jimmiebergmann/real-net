@@ -18,6 +18,7 @@ script:
   - cd ../../../../
   - make test
   - cd bin/
+  - ifconfig
   - valgrind --leak-check=full --track-origins=yes --errors-for-leak-kinds=definite,indirect,possible --run-libc-freeres=no --error-exitcode=1 ./test
 
 notifications:

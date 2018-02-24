@@ -26,4 +26,13 @@
 #pragma once
 
 #include <sys/time.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <netdb.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#define closesocket close
+

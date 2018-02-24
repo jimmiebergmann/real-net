@@ -12,8 +12,8 @@
 #include <Clock.hpp>
 #include <Time.hpp>
 #include <Address.hpp>
-
-
+#include <core/UdpSocket.hpp>
+#include <core/SocketSelector.hpp>
 
 
 namespace Net
@@ -158,6 +158,12 @@ namespace Net
                 EXPECT_TRUE(address.GetAsString() == "127.0.0.1");
             }
             {
+                Net::Address address("::1");
+                EXPECT_EQ(address.GetType(), Net::Address::Ipv6);
+                EXPECT_TRUE(address.IsLoopback());
+                EXPECT_FALSE(address.IsZero());
+            }
+            {
                 Net::Address address("ip6-localhost");
                 EXPECT_EQ(address.GetType(), Net::Address::Ipv6);
                 EXPECT_TRUE(address.IsLoopback());
@@ -217,6 +223,53 @@ namespace Net
         EXPECT_EQ(socketAddress.GetPort(), 123);
         socketAddress.SetPort(321);
         EXPECT_EQ(socketAddress.GetPort(), 321);
+    }
+
+    TEST(UdpSocket_SocketSelector, tests)
+    {
+        {
+           Net::Core::UdpSocket socket;
+           EXPECT_EQ(socket.GetHandle(), 0);
+           EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv4));
+           EXPECT_NE(socket.GetHandle(), 0);
+        }
+        {
+           Net::Core::UdpSocket socket;
+           EXPECT_EQ(socket.GetHandle(), 0);
+           EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv6));
+           EXPECT_NE(socket.GetHandle(), 0);
+        }
+        {
+           Net::Core::UdpSocket socket;
+           EXPECT_EQ(socket.GetHandle(), 0);
+           EXPECT_NO_THROW(socket.Open(12312, Net::Address::Any));
+           EXPECT_NE(socket.GetHandle(), 0);
+        }
+        {
+            Net::Core::UdpSocket socket_1;
+            Net::Core::UdpSocket socket_2;
+
+            EXPECT_NO_THROW(socket_1.Open(12312, Net::Address::Ipv4));
+            EXPECT_THROW(socket_2.Open(12312, Net::Address::Ipv4), std::system_error);
+        }
+        {
+            Net::Core::SocketSelector selector;
+            Net::Core::UdpSocket socket;
+            EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv6));
+            EXPECT_FALSE(selector.Select(&socket, Net::Seconds(1.0f)));
+        }
+        {
+
+            for(size_t i = 0; i < 2; i++)
+            {
+                const Net::Address::eType ipType = (i == 0 ? Net::Address::Ipv4 : Net::Address::Ipv6);
+                Net::Core::SocketSelector selector;
+                Net::Core::UdpSocket socket;
+                EXPECT_NO_THROW(socket.Open(12312, ipType));
+                EXPECT_EQ(socket.Send(NULL, 0, Net::SocketAddress(Net::Address::Loopback(ipType), 12312)), 0 );
+                EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
+            }
+        }
     }
 }
 

@@ -25,22 +25,12 @@
 
 #pragma once
 
-// Define platform
-#if defined( _WIN32 ) || defined( __WIN32__ ) || defined( _WIN64 ) || defined( __WIN64__ )
-	#define REALNET_PLATFORM_WINDOWS
-#elif defined(linux) || defined(__linux)
-	#define REALNET_PLATFORM_LINUX
-#else
-	#error No platform defined.
+#include <core/Build.hpp>
+#if defined(REALNET_PLATFORM_WINDOWS)
+    #include <core/platform/WindowsHeaders.hpp>
+#elif defined(REALNET_PLATFORM_LINUX)
+    #include <core/platform/LinuxHeaders.hpp>
 #endif
-
-// Define test friend.
-#ifndef TEST_FRIEND
-#define TEST_FRIEND
-#endif
-
-#include <exception>
-#include <system_error>
 
 namespace Net
 {
@@ -48,10 +38,44 @@ namespace Net
     namespace Core
     {
 
+    #if defined(REALNET_PLATFORM_WINDOWS)
+        typedef SOCKET SocketHandle;
+
+        // Intiialize winsock initializer.
+        struct WinsockInitializer
+        {
+            WinsockInitializer()
+            {
+                WSADATA wsaData;
+                if( WSAStartup(MAKEWORD(2,2), &wsaData))
+                {
+                    throw std::runtime_error("Failed to initialize winsock.");
+                }
+            }
+        };
+        static WinsockInitializer RealnetWinsockInitializer;
+
+    #elif defined(REALNET_PLATFORM_LINUX)
+        typedef unsigned int SocketHandle;
+    #endif
+
         /**
-        * @breif Get socket handle from socket class.
+        * @breif Socket base class.
         *
         */
-        int GetLastSystemError();
+        class Socket
+        {
+
+        public:
+
+            /**
+            * @breif Get socket handle from socket class.
+            *
+            */
+            virtual SocketHandle GetHandle() = 0;
+
+        };
+
     }
+
 }

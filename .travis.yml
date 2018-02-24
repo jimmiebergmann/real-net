@@ -18,7 +18,7 @@ script:
   - cd ../../../../
   - make test
   - cd bin/
-  - valgrind --leak-check=full --track-origins=yes ---errors-for-leak-kinds=definite,indirect,possible --error-exitcode=1 ./test
+  - valgrind --leak-check=full --track-origins=yes --errors-for-leak-kinds=definite,indirect,possible --error-exitcode=1 ./test
 
 notifications:
   email: false

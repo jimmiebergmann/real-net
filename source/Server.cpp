@@ -46,7 +46,7 @@ namespace Net
 
         m_Hosted = true;
 
-        m_ReceiveThread = std::thread([this]()
+        m_ReceiveThread = std::thread([]()
         {
 
         });

@@ -81,7 +81,7 @@ namespace Net
             }
         });
 
-        // Semaphore wait...
+        // Wait for all threads to start running.
         m_ServerHostSempahore.Wait();
 
         m_Hosted = true;
@@ -90,7 +90,6 @@ namespace Net
     void Server::Stop()
     {
         Core::SafeGuard sf(m_StartMutex);
-
 
         if(m_Hosted == false)
         {

@@ -366,7 +366,7 @@ namespace Net
                 const int sendSize = 13;
                 const char sendData[sendSize] = "Hello world!";
                 {
-                    size_t sentSize = 0;
+                    int sentSize = 0;
                     EXPECT_EQ(sentSize = socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), sendSize );
                     if(sentSize >= 0)
                     {

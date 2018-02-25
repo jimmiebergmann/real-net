@@ -123,7 +123,6 @@ namespace Net
                 m_Stopped = true;
                 if(m_pSocket)
                 {
-                    char byte = 5;
                     m_pSocket->Send(NULL, 0, m_pSocket->GetSocketAddress());
                 }
             }

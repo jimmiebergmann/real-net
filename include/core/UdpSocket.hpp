@@ -26,7 +26,6 @@
 #pragma once
 
 #include <core/Socket.hpp>
-#include <Address.hpp>
 
 namespace Net
 {
@@ -71,7 +70,7 @@ namespace Net
             * @throw std::system_error if failing, containing socket error code.
             *
             */
-            void Open(const unsigned short port, Address::eType family = Address::Any);
+            void Open(const unsigned short port, const Address::eType family = Address::Any);
 
             /**
             * @breif Close open UDP socket.
@@ -112,14 +111,28 @@ namespace Net
             void SetBlocking(const bool status);
 
             /**
+            * @breif Get address family.
+            *
+            */
+            Address::eType GetFamily() const;
+
+            /**
             * @breif Get socket handle.
             *
             */
-            virtual SocketHandle GetHandle();
+            virtual SocketHandle GetHandle() const;
+
+            /**
+            * @breif Get socket address of socket.
+            *
+            */
+            virtual SocketAddress GetSocketAddress() const;
 
         private:
 
-            SocketHandle m_Handle; ///< UDP socket handle.
+            SocketHandle    m_Handle; ///< UDP socket handle.
+            Address::eType  m_Family;
+            SocketAddress   m_SocketAddress;
         };
 
     }

@@ -32,7 +32,8 @@ namespace Net
     {
 
         ServerImp::ServerImp() :
-            m_Hosted(false)
+            m_Hosted(false),
+            m_Stopping(false)
         {
         }
 

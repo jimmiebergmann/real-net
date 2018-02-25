@@ -24,6 +24,7 @@
 */
 
 #include <Server.hpp>
+#include <core/Safe.hpp>
 
 namespace Net
 {
@@ -37,31 +38,71 @@ namespace Net
         Stop();
     }
 
-    Server::eHostStatus Server::Host(const unsigned short port, Address::eType family)
+    void Server::Host(const unsigned short port, Address::eType family)
     {
+        Core::SafeGuard sf(m_StartMutex);
+
         if(m_Hosted == true)
         {
-            return AlreadyHosted;
+            throw std::logic_error("Server is already hosted.");
+            return;
+        }
+        if(m_Stopping == true)
+        {
+            throw std::logic_error("Server is currently stopping.");
+            return;
         }
 
-        m_Hosted = true;
+        m_ReceiveSocket.Open(port, family);
+        m_SocketSelector.Start(&m_ReceiveSocket);
 
-        m_ReceiveThread = std::thread([]()
+        m_ReceiveThread = std::thread([this]()
         {
+            const size_t bufferSize = 1024;
+            unsigned char buffer[bufferSize];
+            SocketAddress socketAddress;
 
+            m_ServerHostSempahore.NotifyOne();
+
+            while(m_Stopping == false)
+            {
+
+                if(m_SocketSelector.Select(Milliseconds(500ULL)) == false)
+                {
+                    continue;
+                }
+
+                int receiveSize = m_ReceiveSocket.Receive(buffer, bufferSize, socketAddress);
+                if(receiveSize < 0)
+                {
+                    continue;
+                }
+
+            }
         });
 
-        return Success;
+        // Semaphore wait...
+        m_ServerHostSempahore.Wait();
+
+        m_Hosted = true;
     }
 
     void Server::Stop()
     {
+        Core::SafeGuard sf(m_StartMutex);
+
+
         if(m_Hosted == false)
         {
             return;
         }
 
         m_Hosted = false;
+        m_Stopping = true;
+        m_SocketSelector.Stop();
+        m_ReceiveThread.join();
+        m_ReceiveSocket.Close();
+        m_Stopping = false;
     }
 
     bool Server::OnPeerPreConnect(Peer & peer)

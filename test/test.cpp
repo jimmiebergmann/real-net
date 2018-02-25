@@ -13,6 +13,7 @@
 #include <Clock.hpp>
 #include <Time.hpp>
 #include <Address.hpp>
+#include <Server.hpp>
 #include <core/UdpSocket.hpp>
 #include <core/SocketSelector.hpp>
 
@@ -21,6 +22,7 @@
 
 namespace Net
 {
+
     namespace Core
     {
     }
@@ -254,45 +256,59 @@ namespace Net
 #endif // defined
         }
         {
-            Net::Core::SocketSelector selector;
             Net::Core::UdpSocket socket;
+            Net::Core::SocketSelector selector(&socket);
             EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv6));
-            EXPECT_FALSE(selector.Select(&socket, Net::Seconds(1.0f)));
+            EXPECT_FALSE(selector.Select(Net::Seconds(1.0f)));
         }
         {
             const size_t sendSize = 13;
             const char sendData[sendSize] = "Hello world!";
             {
-                Net::Core::SocketSelector selector;
                 Net::Core::UdpSocket socket;
+                Net::Core::SocketSelector selector(&socket);
                 EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv4));
                 EXPECT_EQ((int)socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), (int)sendSize );
-                EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
+                EXPECT_TRUE(selector.Select(Net::Seconds(1.0f)));
             }
             {
-                Net::Core::SocketSelector selector;
                 Net::Core::UdpSocket socket;
+                Net::Core::SocketSelector selector(&socket);
                 EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv6));
                 EXPECT_EQ((int)socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), (int)sendSize );
-                std::cout << GTEST_PRINT << "Last error: " << Net::Core::GetLastSystemError() << std::endl;
-                EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
+                std::cout << GTEST_PRINT << "Expected last error: " << Net::Core::GetLastSystemError() << std::endl;
+                EXPECT_TRUE(selector.Select(Net::Seconds(1.0f)));
             }
             {
-                Net::Core::SocketSelector selector;
                 Net::Core::UdpSocket socket;
+                Net::Core::SocketSelector selector(&socket);
                 EXPECT_NO_THROW(socket.Open(12312, Net::Address::Any));
                 Net::Core::UdpSocket sendSocket;
                 EXPECT_NO_THROW(sendSocket.Open(12313, Net::Address::Ipv4));
 
                 EXPECT_EQ((int)sendSocket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), (int)sendSize );
-                EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
+                EXPECT_TRUE(selector.Select(Net::Seconds(1.0f)));
             }
             {
-                Net::Core::SocketSelector selector;
                 Net::Core::UdpSocket socket;
+                Net::Core::SocketSelector selector(&socket);
                 EXPECT_NO_THROW(socket.Open(12312, Net::Address::Any));
                 EXPECT_EQ((int)socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12312)), (int)sendSize );
-                EXPECT_TRUE(selector.Select(&socket, Net::Seconds(1.0f)));
+                EXPECT_TRUE(selector.Select(Net::Seconds(1.0f)));
+            }
+            {
+                Net::Core::UdpSocket socket;
+                Net::Core::SocketSelector selector(&socket);
+                EXPECT_NO_THROW(socket.Open(12312, Net::Address::Any));
+
+                std::thread closeThread = std::thread([&selector]()
+                {
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                    selector.Stop();
+                });
+
+                EXPECT_FALSE(selector.Select());
+                closeThread.join();
             }
         }
         {
@@ -378,6 +394,23 @@ namespace Net
 
             }
         }
+    }
+
+    TEST(Server, basic_tests)
+    {
+        {
+            Net::Server server;
+            EXPECT_NO_THROW(server.Host(12312));
+            EXPECT_THROW(server.Host(12312), std::logic_error);
+        }
+        {
+            Net::Server server;
+            EXPECT_NO_THROW(server.Host(12313));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            server.Stop();
+        }
+
+
     }
 }
 

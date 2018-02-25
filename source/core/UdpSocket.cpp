@@ -33,7 +33,8 @@ namespace Net
     {
 
         UdpSocket::UdpSocket() :
-            m_Handle(0)
+            m_Handle(0),
+            m_Family(Address::Any)
         {
         }
 
@@ -48,11 +49,11 @@ namespace Net
             Close();
         }
 
-        void UdpSocket::Open(const unsigned short port, Address::eType family)
+        void UdpSocket::Open(const unsigned short port, const Address::eType family)
         {
             Close();
 
-            int domain = family == Address::Ipv4 ? AF_INET : AF_INET6;
+            int domain = (family == Address::Ipv4 ? AF_INET : AF_INET6);
 
             // Create the socket
             if((m_Handle = socket(domain, SOCK_DGRAM, IPPROTO_UDP)) <= 0)
@@ -84,6 +85,9 @@ namespace Net
                     Close();
                     throw std::system_error(GetLastSystemError(), std::system_category(), "Failed to bind socket to port " + std::to_string(port) +  ".");
                 }
+
+                m_Family = Address::Ipv6;
+                m_SocketAddress.SetIp(Address::Loopback(m_Family));
             }
             // Ipv4
             else
@@ -100,7 +104,12 @@ namespace Net
                     Close();
                     throw std::system_error(GetLastSystemError(), std::system_category(), "Failed to bind socket to port " + std::to_string(port) +  ".");
                 }
+
+                m_Family = Address::Ipv6;
+                m_SocketAddress.SetIp(Address::Loopback(m_Family));
             }
+
+            m_SocketAddress.SetPort(port);
         }
 
         void UdpSocket::Close()
@@ -109,6 +118,7 @@ namespace Net
             {
                 closesocket(m_Handle);
                 m_Handle = 0;
+                m_Family = Address::Any;
             }
         }
 
@@ -211,9 +221,19 @@ namespace Net
         #endif
         }
 
-        SocketHandle UdpSocket::GetHandle()
+        Address::eType UdpSocket::GetFamily() const
+        {
+            return m_Family;
+        }
+
+        SocketHandle UdpSocket::GetHandle() const
         {
             return m_Handle;
+        }
+
+        SocketAddress UdpSocket::GetSocketAddress() const
+        {
+            return m_SocketAddress;
         }
 
     }

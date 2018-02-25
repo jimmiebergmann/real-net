@@ -36,16 +36,6 @@ namespace Net
 
     public:
 
-        /**
-        * @breif Return status of hosting.
-        *
-        */
-        enum eHostStatus
-        {
-            Success,
-            AlreadyHosted,
-            FailedPort
-        };
 
         /**
         * @breif Constructor.
@@ -66,11 +56,12 @@ namespace Net
         * @param family Specify connection family. Ipv4/Ipv6/Any.
         *               "Any" will allow both Ipv4 and Ipv6 connections.
         *
-        * @return Success if succeeded, else FailedPort if given port is in use,
-        *         AlreadyHosted if server already is hosted.
+        * @throw std::system_error  If failing to create server port.
+        * @throw std::logic_error   If calling Stop/Start in wrong order or
+        *                           if starting server while it's stopping.
         *
         */
-        eHostStatus Host(const unsigned short port, Address::eType family = Address::Any);
+        void Host(const unsigned short port, Address::eType family = Address::Any);
 
         /**
         * @breif Stop hosted server. No action if not hosted.

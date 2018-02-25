@@ -25,10 +25,10 @@
 
 #pragma once
 
-#include <core/UdpSocket.hpp>
 #include <Time.hpp>
 #include <mutex>
-#include <atomic>
+#include <condition_variable>
+#include <chrono>
 
 namespace Net
 {
@@ -36,11 +36,7 @@ namespace Net
     namespace Core
     {
 
-        /**
-        * @breif Socket selector class.
-        *
-        */
-        class SocketSelector
+        class Semaphore
         {
 
         public:
@@ -48,51 +44,49 @@ namespace Net
             /**
             * @breif Constructor.
             *
-            * @throw std::system_error if failing, containing socket error code.
-            *
             */
-            SocketSelector(UdpSocket * socket = nullptr);
+            Semaphore();
 
             /**
-            * @breif Destructor.
+            * @breif Notify one wait.
             *
             */
-            ~SocketSelector();
+            void NotifyOne();
 
             /**
-            * @breif Wait for data to read from socket, by given timeout.
-            *        It's possible to break the wait by calling Stop().
-            *
-            * @return True if new data is available to read from socket,
-            *         false if timeout is reached or stopped via Stop().
+            * @breif Notify all waits.
             *
             */
-            bool Select(const Time & timeout = Time::Infinite);
+            void NotifyAll();
 
             /**
-            * @breif Wait for data to read from socket, by given timeout.
-            *        It's possible to break the wait by calling Stop().
-            *
-            * @throw std::system_error if failing, containing socket error code.
+            * @breif Wait for notifies.
             *
             */
-            void Start(UdpSocket * socket);
+            void Wait();
 
             /**
-            * @breif Wait for data to read from socket.
-            *        It's possible to break the wait by calling Stop().
+            * @breif Try to wait.
+            *
+            * @return False if function call will result in a wait, else true.
             *
             */
-            void Stop();
+            bool TryWait();
+
+            /**
+            * @breif Wait until given timeout is reached.
+            *
+            * @return False if timeout is reached, else false.
+            *
+            */
+            bool WaitFor(const Time & timeout);
 
         private:
 
-            UdpSocket * m_pSocket;
-            std::mutex          m_Mutex;        ///< Socket handle mutex.
-            std::atomic<bool>   m_Stopped;      ///< Stopped flag.
-
+            std::mutex m_Mutex;
+            std::condition_variable m_Condition;
+            unsigned long m_Count;
         };
 
     }
-
 }

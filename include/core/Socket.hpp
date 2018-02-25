@@ -32,6 +32,8 @@
     #include <core/platform/LinuxHeaders.hpp>
 #endif
 
+#include <Address.hpp>
+
 namespace Net
 {
 
@@ -72,7 +74,13 @@ namespace Net
             * @breif Get socket handle from socket class.
             *
             */
-            virtual SocketHandle GetHandle() = 0;
+            virtual SocketHandle GetHandle() const = 0;
+
+            /**
+            * @breif Get socket address of socket.
+            *
+            */
+            virtual SocketAddress GetSocketAddress() const = 0;
 
         };
 

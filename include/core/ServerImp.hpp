@@ -25,10 +25,14 @@
 
 #pragma once
 
-#include <core/Build.hpp>
+#include <core/SocketSelector.hpp>
+#include <core/UdpSocket.hpp>
+#include <core/Safe.hpp>
+#include <core/Semaphore.hpp>
 #include <Peer.hpp>
 #include <map>
 #include <thread>
+#include <atomic>
 
 namespace Net
 {
@@ -47,9 +51,14 @@ namespace Net
             */
             ServerImp();
 
-            bool                                m_Hosted;           ///< Is the server currently hosted?
-            std::map<unsigned short, Peer *>    m_PeerMap;          ///< Map of all connected peers.
-            std::thread                         m_ReceiveThread;   ///< Thread for receiving packets.
+            std::atomic<bool>                   m_Hosted;                   ///< Is the server currently hosted?
+            std::atomic<bool>                   m_Stopping;                 ///< Is the server currently stopping?
+            std::map<unsigned short, Peer *>    m_PeerMap;                  ///< Map of all connected peers.
+            std::thread                         m_ReceiveThread;            ///< Thread for receiving packets.
+            SocketSelector                      m_SocketSelector;           ///< Socket selector for receive socket.
+            UdpSocket                           m_ReceiveSocket;            ///< Socket for receiving data.
+            std::mutex                          m_StartMutex;               ///< Mutex for starting server.
+            Semaphore                           m_ServerHostSempahore;      ///< Semaphore for waiting for all threads.
 
             TEST_FRIEND ///< Allow private tests.
         };

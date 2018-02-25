@@ -24,6 +24,7 @@
 */
 
 #include <core/SocketSelector.hpp>
+#include <core/Safe.hpp>
 
 namespace Net
 {
@@ -31,10 +32,14 @@ namespace Net
     namespace Core
     {
 
-        SocketSelector::SocketSelector() :
-            m_StopHandle(0)
+        SocketSelector::SocketSelector(UdpSocket * socket) :
+            m_pSocket(nullptr),
+            m_Stopped(true)
         {
-            Start();
+            if(socket)
+            {
+                Start(socket);
+            }
         }
 
         SocketSelector::~SocketSelector()
@@ -42,22 +47,22 @@ namespace Net
             Stop();
         }
 
-        bool SocketSelector::Select(Socket * socket, const Time & timeout)
+        bool SocketSelector::Select(const Time & timeout)
         {
-            if(socket == nullptr)
+            if(m_pSocket == nullptr)
             {
                 return false;
             }
-            SocketHandle handle = socket->GetHandle();
+
+            const SocketHandle handle = m_pSocket->GetHandle();
             if(handle == 0)
             {
                 return false;
             }
 
             fd_set readSet;
-            int highest = 0;
             {
-                std::lock_guard<std::mutex> sf(m_Mutex);
+                SafeGuard sf(m_Mutex);
 
                 if(m_Stopped)
                 {
@@ -65,10 +70,7 @@ namespace Net
                 }
 
                 FD_ZERO(&readSet);
-                FD_SET(m_StopHandle, &readSet);
                 FD_SET(handle, &readSet);
-
-                highest = m_StopHandle > handle ? m_StopHandle : socket->GetHandle();
             }
 
             struct timeval time;
@@ -80,7 +82,8 @@ namespace Net
                 pTimeout = &time;
             }
 
-            if(select(highest + 1, &readSet, NULL, NULL, pTimeout) == -1)
+            int ret = 0;
+            if((ret = select(handle + 1, &readSet, NULL, NULL, pTimeout)) == -1)
             {
                 return false;
             }
@@ -94,32 +97,34 @@ namespace Net
             return true;
         }
 
-        void SocketSelector::Start()
+        void SocketSelector::Start(UdpSocket * socket)
         {
-            {
-                std::lock_guard<std::mutex> sf(m_Mutex);
+            SafeGuard sf(m_Mutex);
 
-                if(m_StopHandle == 0)
+            if(m_Stopped == true)
+            {
+                if(socket == nullptr)
                 {
-                    m_StopHandle = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+                    return;
                 }
 
-                m_Stopped = false;
+                m_pSocket = socket;
             }
 
+            m_Stopped = false;
         }
 
         void SocketSelector::Stop()
         {
+            SafeGuard sf(m_Mutex);
+
+            if(m_Stopped == false)
             {
-                std::lock_guard<std::mutex> sf(m_Mutex);
-
                 m_Stopped = true;
-
-                if(m_StopHandle)
+                if(m_pSocket)
                 {
-                    closesocket(m_StopHandle);
-                    m_StopHandle = 0;
+                    char byte = 5;
+                    m_pSocket->Send(NULL, 0, m_pSocket->GetSocketAddress());
                 }
             }
         }

@@ -63,6 +63,8 @@
 		<Unit filename="../../include/core/Build.hpp" />
 		<Unit filename="../../include/core/EntityManager.hpp" />
 		<Unit filename="../../include/core/Packet.hpp" />
+		<Unit filename="../../include/core/Safe.hpp" />
+		<Unit filename="../../include/core/Semaphore.hpp" />
 		<Unit filename="../../include/core/ServerImp.hpp" />
 		<Unit filename="../../include/core/Socket.hpp" />
 		<Unit filename="../../include/core/SocketSelector.hpp" />
@@ -82,6 +84,7 @@
 		<Unit filename="../../source/core/Build.cpp" />
 		<Unit filename="../../source/core/EntityManager.cpp" />
 		<Unit filename="../../source/core/Packet.cpp" />
+		<Unit filename="../../source/core/Semaphore.cpp" />
 		<Unit filename="../../source/core/ServerImp.cpp" />
 		<Unit filename="../../source/core/SocketSelector.cpp" />
 		<Unit filename="../../source/core/UdpSocket.cpp" />

@@ -12,10 +12,10 @@ REALNET_DEBUG_OBJ := $(patsubst %.cpp,$(OBJ_FOLDER)/debug/realnet/%.o, $(REALNET
 all: release debug test
 
 $(REALNET_RELEASE_OBJ): obj/release/realnet/%.o: %.cpp
-	$(CXX) -std=c++11 -Wall -pedantic -c -Iinclude $< -o $@
+	$(CXX) -std=c++11 -Wall -Werror -pedantic -c -Iinclude $< -o $@
 
 $(REALNET_DEBUG_OBJ): obj/debug/realnet/%.o: %.cpp
-	$(CXX) -std=c++11 -Wall -pedantic -g -c -Iinclude $< -o $@
+	$(CXX) -std=c++11 -Wall -Werror -pedantic -g -c -Iinclude $< -o $@
 
 
 release: release_folders archive_release

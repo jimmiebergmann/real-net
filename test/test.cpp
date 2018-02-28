@@ -6,7 +6,7 @@
 
 #define REALNET_TEST
 
-#define TEST_FRIEND \
+#define REALNET_TEST_FRIEND \
     FRIEND_TEST(Address, tests); \
     FRIEND_TEST(SocketAddress, tests);
 
@@ -249,7 +249,7 @@ namespace Net
             Net::Core::UdpSocket socket_2;
 
             EXPECT_NO_THROW(socket_1.Open(12312, Net::Address::Ipv4));
-            EXPECT_THROW(socket_2.Open(12312, Net::Address::Ipv4), std::system_error);
+            EXPECT_THROW(socket_2.Open(12312, Net::Address::Ipv4), Net::SystemException);
 #if defined(REALNET_PLATFORM_LINUX)
             EXPECT_EQ(Net::Core::GetLastSystemError(), EADDRINUSE);
             errno = 0;
@@ -401,7 +401,13 @@ namespace Net
         {
             Net::Server server;
             EXPECT_NO_THROW(server.Host(12312));
-            EXPECT_THROW(server.Host(12312), std::logic_error);
+            EXPECT_THROW(server.Host(12312), Net::Exception);
+        }
+        {
+            Net::Server server_1;
+            Net::Server server_2;
+            EXPECT_NO_THROW(server_1.Host(12312));
+            EXPECT_THROW(server_2.Host(12312), Net::SystemException);
         }
         {
             Net::Server server;
@@ -409,8 +415,21 @@ namespace Net
             std::this_thread::sleep_for(std::chrono::seconds(1));
             server.Stop();
         }
+    }
+    TEST(Server, EntityLinkage)
+    {
+        class TestEntity : public Net::Entity
+        {
 
+            public:
 
+        };
+
+        {
+            Net::Server server;
+
+            server.LinkEntity<TestEntity>("TestEntity");
+        }
     }
 }
 

@@ -26,12 +26,14 @@
 #pragma once
 
 #include <core/ServerImp.hpp>
+#include <EntityManager.hpp>
 #include <Address.hpp>
+
 
 namespace Net
 {
 
-    class Server : private Core::ServerImp
+    class Server : public EntityManager, private Core::ServerImp
     {
 
     public:
@@ -56,8 +58,8 @@ namespace Net
         * @param family Specify connection family. Ipv4/Ipv6/Any.
         *               "Any" will allow both Ipv4 and Ipv6 connections.
         *
-        * @throw std::system_error  If failing to create server port.
-        * @throw std::logic_error   If calling Stop/Start in wrong order or
+        * @throw SystemException    If failing to create server port.
+        * @throw Exception          If calling Stop/Start in wrong order or
         *                           if starting server while it's stopping.
         *
         */
@@ -74,7 +76,7 @@ namespace Net
         virtual void OnPeerConnect(Peer & peer);
         virtual void OnPeerDisconnect(Peer & peer);
 
-        TEST_FRIEND ///< Allow private tests.
+        REALNET_TEST_FRIEND ///< Allow private tests.
 
     };
 

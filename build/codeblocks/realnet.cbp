@@ -54,6 +54,10 @@
 		<Unit filename="../../include/Client.hpp" />
 		<Unit filename="../../include/Clock.hpp" />
 		<Unit filename="../../include/Entity.hpp" />
+		<Unit filename="../../include/EntityManager.hpp" />
+		<Unit filename="../../include/EntityManager.inl" />
+		<Unit filename="../../include/Exception.hpp" />
+		<Unit filename="../../include/Log.hpp" />
 		<Unit filename="../../include/Message.hpp" />
 		<Unit filename="../../include/MessageListener.hpp" />
 		<Unit filename="../../include/Peer.hpp" />
@@ -61,7 +65,9 @@
 		<Unit filename="../../include/Time.hpp" />
 		<Unit filename="../../include/Variable.hpp" />
 		<Unit filename="../../include/core/Build.hpp" />
-		<Unit filename="../../include/core/EntityManager.hpp" />
+		<Unit filename="../../include/core/DefaultLog.hpp" />
+		<Unit filename="../../include/core/EntityManagerImp.hpp" />
+		<Unit filename="../../include/core/EntityManagerImp.inl" />
 		<Unit filename="../../include/core/Packet.hpp" />
 		<Unit filename="../../include/core/Safe.hpp" />
 		<Unit filename="../../include/core/Semaphore.hpp" />
@@ -75,6 +81,8 @@
 		<Unit filename="../../source/Client.cpp" />
 		<Unit filename="../../source/Clock.cpp" />
 		<Unit filename="../../source/Entity.cpp" />
+		<Unit filename="../../source/EntityManager.cpp" />
+		<Unit filename="../../source/Exception.cpp" />
 		<Unit filename="../../source/Message.cpp" />
 		<Unit filename="../../source/MessageListener.cpp" />
 		<Unit filename="../../source/Peer.cpp" />
@@ -82,7 +90,8 @@
 		<Unit filename="../../source/Time.cpp" />
 		<Unit filename="../../source/Variable.cpp" />
 		<Unit filename="../../source/core/Build.cpp" />
-		<Unit filename="../../source/core/EntityManager.cpp" />
+		<Unit filename="../../source/core/DefaultLog.cpp" />
+		<Unit filename="../../source/core/EntityManagerImp.cpp" />
 		<Unit filename="../../source/core/Packet.cpp" />
 		<Unit filename="../../source/core/Semaphore.cpp" />
 		<Unit filename="../../source/core/ServerImp.cpp" />

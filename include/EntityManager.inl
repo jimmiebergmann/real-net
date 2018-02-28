@@ -23,41 +23,30 @@
 *
 */
 
-#pragma once
-
-
-
-
-// Define platform
-#if defined( _WIN32 ) || defined( __WIN32__ ) || defined( _WIN64 ) || defined( __WIN64__ )
-	#define REALNET_PLATFORM_WINDOWS
-#elif defined(linux) || defined(__linux)
-	#define REALNET_PLATFORM_LINUX
-#else
-	#error No platform defined.
-#endif
-
-// Define test friend.
-#ifndef REALNET_TEST_FRIEND
-#define REALNET_TEST_FRIEND
-#endif
-
-#include <Exception.hpp>
-
-namespace Net
+template <typename EntityClass>
+EntityLinkage & EntityManager::LinkEntity(const std::string & name)
 {
 
-    // Typedef the data types used in real-net for entity and groups id.
-    typedef unsigned short  EntityIdType;
-    typedef unsigned int    GroupIdType;
 
-    namespace Core
+    auto it = m_EntityLinkages.find(name);
+    if( it != m_EntityLinkages.end( ) )
     {
-
-        /**
-        * @breif Get socket handle from socket class.
-        *
-        */
-        size_t GetLastSystemError();
+        return *static_cast<EntityLinkage*>(it->second);
     }
+
+    EntityLinkage * pLinkage = new EntityLinkage;
+    //pLinkage->TypeHash = typeid(EntityClass).hash_code();
+    //pLinkage->ClassName = typeid(EntityClass).name();
+    pLinkage->AllocationFunction = &AllocateEntity<EntityClass>;
+    m_EntityLinkages.insert({name, pLinkage});
+
+    return *pLinkage;
+}
+
+template <typename EntityClass>
+EntityClass * EntityManager::CreateEntity(const std::string & name)
+{
+    Entity * pEntity = nullptr;
+
+    return static_cast<EntityClass*>(pEntity);
 }

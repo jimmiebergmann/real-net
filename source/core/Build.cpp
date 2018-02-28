@@ -31,12 +31,12 @@ namespace Net
     namespace Core
     {
 
-        int GetLastSystemError()
+        size_t GetLastSystemError()
         {
         #if defined(REALNET_PLATFORM_WINDOWS)
-            return static_cast<int>(GetLastError());
+            return static_cast<size_t>(GetLastError());
         #elif defined(REALNET_PLATFORM_LINUX)
-            return errno;
+            return static_cast<size_t>(errno);
         #endif
         }
 

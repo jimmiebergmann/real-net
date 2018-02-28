@@ -166,12 +166,6 @@ namespace Net
 
     private:
 
-        /**
-        * @breif Allow private tests.
-        *
-        */
-        TEST_FRIEND
-
         eType           m_Type;         ///< Type of address.
         unsigned char   m_Bytes[16];    ///< Bytes describing address.
 
@@ -227,12 +221,6 @@ namespace Net
         void SetPort(unsigned short port);
 
     private:
-
-        /**
-        * @breif Allow private tests.
-        *
-        */
-        TEST_FRIEND
 
         Address         m_Address;  ///< Socket address.
         unsigned short  m_Port;     ///< Socket port.

@@ -58,7 +58,7 @@ namespace Net
             // Create the socket
             if((m_Handle = socket(domain, SOCK_DGRAM, IPPROTO_UDP)) <= 0)
             {
-                throw std::system_error(GetLastSystemError(), std::system_category(), "Failed to create socket.");
+                throw SystemException("Failed to create socket.", GetLastSystemError());
             }
 
             // Ipv6/Any
@@ -70,7 +70,7 @@ namespace Net
                 if (setsockopt(m_Handle, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only)) != 0)
                 {
                     Close();
-                    throw std::system_error(GetLastSystemError(), std::system_category(), "Failed to enable/disable ipv6 only.");
+                    throw SystemException("Failed to enable/disable ipv6 only.", GetLastSystemError());
                 }
 
                 struct sockaddr_in6 service;
@@ -83,7 +83,7 @@ namespace Net
                 if(bind(m_Handle, reinterpret_cast<const sockaddr *>(&service), sizeof(service)) != 0)
                 {
                     Close();
-                    throw std::system_error(GetLastSystemError(), std::system_category(), "Failed to bind socket to port " + std::to_string(port) +  ".");
+                    throw SystemException("Failed to bind socket to port " + std::to_string(port) +  ".", GetLastSystemError());
                 }
 
                 m_Family = Address::Ipv6;
@@ -102,7 +102,7 @@ namespace Net
                 if(bind(m_Handle, reinterpret_cast<const sockaddr *>(&service), sizeof(service)) != 0)
                 {
                     Close();
-                    throw std::system_error(GetLastSystemError(), std::system_category(), "Failed to bind socket to port " + std::to_string(port) +  ".");
+                    throw SystemException("Failed to bind socket to port " + std::to_string(port) +  ".", GetLastSystemError());
                 }
 
                 m_Family = Address::Ipv6;
@@ -205,18 +205,18 @@ namespace Net
             unsigned long mode = blocking ? 0 : 1;
             if(ioctlsocket(m_Handle, FIONBIO, &mode) != 0)
             {
-                throw std::system_error(GetLastSystemError(), std::system_category(), "Failed set socket blocking.");
+                throw SystemException("Failed set socket blocking.", GetLastSystemError());
             }
         #elif defined(REALNET_PLATFORM_LINUX)
             int flags = fcntl(m_Handle, F_GETFL, 0);
             if (flags == -1)
             {
-               throw std::system_error(GetLastSystemError(), std::system_category(), "Failed get socket blocking.");
+               throw SystemException("Failed get socket blocking.", GetLastSystemError());
             }
             flags = status ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
             if(fcntl(m_Handle, F_SETFL, flags) != 0)
             {
-                throw std::system_error(GetLastSystemError(), std::system_category(), "Failed set socket blocking.");
+                throw SystemException("Failed set socket blocking.", GetLastSystemError());
             }
         #endif
         }

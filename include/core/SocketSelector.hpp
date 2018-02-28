@@ -47,8 +47,7 @@ namespace Net
 
             /**
             * @breif Constructor.
-            *
-            * @throw std::system_error if failing, containing socket error code.
+            *        Starting selector if socket != nullptr.
             *
             */
             SocketSelector(UdpSocket * socket = nullptr);
@@ -72,8 +71,6 @@ namespace Net
             /**
             * @breif Wait for data to read from socket, by given timeout.
             *        It's possible to break the wait by calling Stop().
-            *
-            * @throw std::system_error if failing, containing socket error code.
             *
             */
             void Start(UdpSocket * socket);

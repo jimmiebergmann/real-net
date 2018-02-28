@@ -60,7 +60,7 @@ namespace Net
             std::mutex                          m_StartMutex;               ///< Mutex for starting server.
             Semaphore                           m_ServerHostSempahore;      ///< Semaphore for waiting for all threads.
 
-            TEST_FRIEND ///< Allow private tests.
+            REALNET_TEST_FRIEND                 ///< Allow private tests.
         };
 
     }

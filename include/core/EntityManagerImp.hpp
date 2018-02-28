@@ -23,26 +23,63 @@
 *
 */
 
+#pragma once
+
+#include <core/Build.hpp>
 #include <Entity.hpp>
+#include <typeinfo>
+#include <string>
+#include <map>
 
 namespace Net
 {
 
-    EntityIdType Entity::Id() const
-    {
-        return m_Id;
-    }
+    class EntityManager;
 
-    Entity::~Entity()
+    namespace Core
     {
-    }
 
-    void Entity::OnCreation()
-    {
-    }
+        class EntityLinkageImp
+        {
 
-    void Entity::OnDestruction()
-    {
+        public:
+
+            friend class Net::EntityManager;
+
+        protected:
+
+            Entity*(*AllocationFunction)();    ///< Pointer to entity allocation function.
+            //std::string ClassName;           /// Raw name of entity class.
+
+        };
+
+        class EntityManagerImp
+        {
+
+        protected:
+
+            /**
+            * @breif Destructor.
+            *
+            */
+            ~EntityManagerImp();
+
+            /**
+            * @breif Function for allocating a new entity.
+            *
+            */
+            template <typename T>
+            static Entity * AllocateEntity();
+
+            std::map<std::string, EntityLinkageImp *>   m_EntityLinkages;   ///< Map of all entity links.
+            std::map<EntityIdType, Entity *>            m_Entities;         ///< Map of all entities.
+
+        };
+
+         #include <core/EntityManagerImp.inl> ///< Include inline definitions.
+
     }
 
 }
+
+

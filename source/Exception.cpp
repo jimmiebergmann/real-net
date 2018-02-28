@@ -23,41 +23,35 @@
 *
 */
 
-#pragma once
-
-
-
-
-// Define platform
-#if defined( _WIN32 ) || defined( __WIN32__ ) || defined( _WIN64 ) || defined( __WIN64__ )
-	#define REALNET_PLATFORM_WINDOWS
-#elif defined(linux) || defined(__linux)
-	#define REALNET_PLATFORM_LINUX
-#else
-	#error No platform defined.
-#endif
-
-// Define test friend.
-#ifndef REALNET_TEST_FRIEND
-#define REALNET_TEST_FRIEND
-#endif
-
 #include <Exception.hpp>
 
 namespace Net
 {
 
-    // Typedef the data types used in real-net for entity and groups id.
-    typedef unsigned short  EntityIdType;
-    typedef unsigned int    GroupIdType;
-
-    namespace Core
+    Exception::Exception(const std::string & message) :
+        m_Message(message)
     {
-
-        /**
-        * @breif Get socket handle from socket class.
-        *
-        */
-        size_t GetLastSystemError();
     }
+
+    const std::string & Exception::GetMessage() const
+    {
+        return m_Message;
+    }
+
+    const char * Exception::what() const noexcept
+    {
+        return m_Message.c_str();
+    }
+
+    SystemException::SystemException(const std::string & message, const size_t code) :
+        Exception(message),
+        m_Code(code)
+    {
+    }
+
+    size_t SystemException::GetCode() const
+    {
+        return m_Code;
+    }
+
 }

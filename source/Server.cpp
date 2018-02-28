@@ -26,6 +26,7 @@
 #include <Server.hpp>
 #include <core/Safe.hpp>
 
+
 namespace Net
 {
 
@@ -44,12 +45,12 @@ namespace Net
 
         if(m_Hosted == true)
         {
-            throw std::logic_error("Server is already hosted.");
+            throw Exception("Server is already hosted.");
             return;
         }
         if(m_Stopping == true)
         {
-            throw std::logic_error("Server is currently stopping.");
+            throw Exception("Server is currently stopping.");
             return;
         }
 

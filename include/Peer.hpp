@@ -64,12 +64,6 @@ namespace Net
 
     private:
 
-        /**
-        * @breif Allow private tests.
-        *
-        */
-        TEST_FRIEND
-
         unsigned short  m_Id;               ///< Id of peer.
         SocketAddress   m_SocketAddress;    ///< Ip and port of peer.
 

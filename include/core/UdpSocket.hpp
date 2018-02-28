@@ -52,7 +52,7 @@ namespace Net
             * @breif Constructor.
             *        Initialize UDP socket by internally calling Open.
             *
-            * @throw std::system_error, containing socket error code.
+            * @throw SystemException, containing socket error code.
             *
             */
             UdpSocket(const unsigned short port, Address::eType family = Address::Any);
@@ -67,7 +67,7 @@ namespace Net
             /**
             * @breif Open UDP socket.
             *
-            * @throw std::system_error if failing, containing socket error code.
+            * @throw SystemException if failing, containing socket error code.
             *
             */
             void Open(const unsigned short port, const Address::eType family = Address::Any);
@@ -105,7 +105,7 @@ namespace Net
             /**
             * @breif Set blocking status.
             *
-            * @throw std::system_error if failing, containing socket error code.
+            * @throw SystemException if failing, containing socket error code.
             *
             */
             void SetBlocking(const bool status);

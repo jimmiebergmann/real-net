@@ -19,13 +19,15 @@ before_script:
       sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6';
     fi
 script:
+  # Compile test.
   - cd test/googletest/googletest/make/
   - make
   - cd ../../../../
   - make test
+  # Run test.
   - cd bin/
   - ifconfig
-  - valgrind --leak-check=full --track-origins=yes --errors-for-leak-kinds=definite,indirect --run-libc-freeres=no --error-exitcode=1 ./test
+  - sh run_test.sh
 
 notifications:
   email: false

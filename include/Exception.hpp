@@ -25,54 +25,76 @@
 
 #pragma once
 
-#include <core/EntityImp.hpp>
+#include <exception>
+#include <string>
 
 namespace Net
 {
 
-    class EntityManager;
-    namespace Core{ class EntityManagerImp; }
-
     /**
-    * @breif Entity class.
+    * @breif Exception base class.
+    *        Contains exception message.
     *
     */
-    class Entity : public Core::EntityImp
+    class Exception : public std::exception
     {
 
     public:
 
-        friend class EntityManager;
-        friend class Core::EntityManagerImp;
-
         /**
-        * @breif Get id of entity.
+        * @breif Constructor.
+        *        Initialize exception by message.
         *
         */
-        EntityIdType Id() const;
-
-    protected:
+        Exception(const std::string & message);
 
         /**
-        * @breif Destructor.
+        * @breif Get message of exception.
         *
         */
-        virtual ~Entity();
+        const std::string & GetMessage() const;
 
         /**
-        * @breif Called after construction of entity.
+        * @breif Same as Message, but returns a char pointer.
         *
         */
+        virtual const char * what() const noexcept;
 
-        virtual void OnCreation();
+    private:
 
-        /**
-        * @breif Called before destruction of entity.
-        *
-        */
-        virtual void OnDestruction();
-
+        std::string m_Message; ///< Message of exception.
 
     };
+
+
+    /**
+    * @breif System exception class.
+    *        Contains exception message and error code.
+    *
+    */
+    class SystemException : public Exception
+    {
+
+    public:
+
+        /**
+        * @breif Constructor.
+        *        Initialize exception by message and error code.
+        *
+        */
+        SystemException(const std::string & message, const size_t code);
+
+        /**
+        * @breif Get error code of exception.
+        *
+        */
+        size_t GetCode() const;
+
+    private:
+
+        size_t m_Code; ///< Error code of exception.
+
+    };
+
 
 }

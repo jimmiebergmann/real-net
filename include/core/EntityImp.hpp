@@ -25,39 +25,34 @@
 
 #pragma once
 
-
-
-
-// Define platform
-#if defined( _WIN32 ) || defined( __WIN32__ ) || defined( _WIN64 ) || defined( __WIN64__ )
-	#define REALNET_PLATFORM_WINDOWS
-#elif defined(linux) || defined(__linux)
-	#define REALNET_PLATFORM_LINUX
-#else
-	#error No platform defined.
-#endif
-
-// Define test friend.
-#ifndef REALNET_TEST_FRIEND
-#define REALNET_TEST_FRIEND
-#endif
-
-#include <Exception.hpp>
+#include <core/Build.hpp>
 
 namespace Net
 {
 
-    // Typedef the data types used in real-net for entity and groups id.
-    typedef unsigned short  EntityIdType;
-    typedef unsigned int    GroupIdType;
+    class EntityManager;
 
     namespace Core
     {
 
-        /**
-        * @breif Get socket handle from socket class.
-        *
-        */
-        size_t GetLastSystemError();
+        class EntityImp
+        {
+
+        protected:
+
+            /**
+            * @breif Constructor.
+            *
+            */
+            EntityImp();
+
+            EntityIdType    m_Id;               ///< Id of entity.
+            EntityManager * m_pEntityManager;   ///< Pointer to entity manager.
+
+        };
+
     }
+
 }
+
+

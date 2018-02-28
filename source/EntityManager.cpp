@@ -23,41 +23,39 @@
 *
 */
 
-#pragma once
-
-
-
-
-// Define platform
-#if defined( _WIN32 ) || defined( __WIN32__ ) || defined( _WIN64 ) || defined( __WIN64__ )
-	#define REALNET_PLATFORM_WINDOWS
-#elif defined(linux) || defined(__linux)
-	#define REALNET_PLATFORM_LINUX
-#else
-	#error No platform defined.
-#endif
-
-// Define test friend.
-#ifndef REALNET_TEST_FRIEND
-#define REALNET_TEST_FRIEND
-#endif
-
-#include <Exception.hpp>
+#include <EntityManager.hpp>
 
 namespace Net
 {
 
-    // Typedef the data types used in real-net for entity and groups id.
-    typedef unsigned short  EntityIdType;
-    typedef unsigned int    GroupIdType;
-
-    namespace Core
+    EntityLinkage::~EntityLinkage()
     {
 
-        /**
-        * @breif Get socket handle from socket class.
-        *
-        */
-        size_t GetLastSystemError();
     }
+
+    EntityLinkage & EntityLinkage::RegisterVariable(const std::string & name)
+    {
+        return *this;
+    }
+
+    EntityManager::~EntityManager()
+    {
+
+    }
+
+    void EntityManager::UnlinkEntity(const std::string & name)
+    {
+
+    }
+
+    void EntityManager::ReadMessage(const unsigned char * message, const size_t size)
+    {
+
+    }
+
+    unsigned char * EntityManager::WriteMessage(const size_t & size, const size_t & entities)
+    {
+        return nullptr;
+    }
+
 }

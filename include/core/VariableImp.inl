@@ -23,37 +23,26 @@
 *
 */
 
-#include <EntityManager.hpp>
+template <typename Type>
+VariableImp<Type>::VariableImp()
+{
+}
 
-namespace Net
+template <typename Type>
+VariableImp<Type>::VariableImp(const Type & value) :
+    m_Value(value)
 {
 
-    EntityManager::~EntityManager()
+}
+
+template <typename Type>
+bool VariableImp<Type>::CopyData(const void * data, const size_t size)
+{
+    if(size != sizeof(Type))
     {
+        return false;
     }
 
-    EntityManager::EntityManager()
-    {
-    }
-
-    void EntityManager::UnlinkEntity(const std::string & name)
-    {
-
-    }
-
-    bool EntityManager::IsLinked(const std::string & name) const
-    {
-        return m_EntityLinks.find(name) != m_EntityLinks.end();
-    }
-
-    void EntityManager::ReadMessage(const unsigned char * message, const size_t size)
-    {
-
-    }
-
-    unsigned char * EntityManager::WriteMessage(const size_t & size, const size_t & entities)
-    {
-        return nullptr;
-    }
-
+    memcpy(&m_Value, data, size);
+    return true;
 }

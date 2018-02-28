@@ -23,30 +23,20 @@
 *
 */
 
-template <typename EntityClass>
-EntityLinkage & EntityManager::LinkEntity(const std::string & name)
+template <typename Type>
+Variable<Type>::Variable()
 {
-
-
-    auto it = m_EntityLinkages.find(name);
-    if( it != m_EntityLinkages.end( ) )
-    {
-        return *static_cast<EntityLinkage*>(it->second);
-    }
-
-    EntityLinkage * pLinkage = new EntityLinkage;
-    //pLinkage->TypeHash = typeid(EntityClass).hash_code();
-    //pLinkage->ClassName = typeid(EntityClass).name();
-    pLinkage->AllocationFunction = &AllocateEntity<EntityClass>;
-    m_EntityLinkages.insert({name, pLinkage});
-
-    return *pLinkage;
 }
 
-template <typename EntityClass>
-EntityClass * EntityManager::CreateEntity(const std::string & name)
+template <typename Type>
+Variable<Type>::Variable(const Type & value) :
+    Core::VariableImp<Type>(value)
 {
-    Entity * pEntity = nullptr;
 
-    return static_cast<EntityClass*>(pEntity);
+}
+
+template <typename Type>
+Variable<Type>::~Variable()
+{
+
 }

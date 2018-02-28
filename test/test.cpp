@@ -7,8 +7,8 @@
 #define REALNET_TEST
 
 #define REALNET_TEST_FRIEND \
-    FRIEND_TEST(Address, tests); \
-    FRIEND_TEST(SocketAddress, tests);
+    FRIEND_TEST(EntityManager, EntityLinkage);
+
 
 #include <Clock.hpp>
 #include <Time.hpp>
@@ -416,19 +416,65 @@ namespace Net
             server.Stop();
         }
     }
-    TEST(Server, EntityLinkage)
+    TEST(EntityManager, EntityLinkage)
     {
-        class TestEntity : public Net::Entity
+        class FirstEntity : public Net::Entity
         {
 
             public:
 
+                Net::Variable<int>      Integer;
+                Net::Variable<float>    Float;
+                Net::Variable<double>   Double;
+
+        };
+
+        class SecondEntity : public Net::Entity
+        {
+
+            public:
+
+                Net::Variable<int>      Integer;
+                Net::Variable<float>    Float;
+                Net::Variable<double>   Double;
+
         };
 
         {
-            Net::Server server;
+            Net::EntityManager em;
+            EXPECT_NO_THROW(em.LinkEntity<FirstEntity>("FirstEntity"));
+            EXPECT_NO_THROW(em.LinkEntity<FirstEntity>("FirstEntity"));
+            EXPECT_THROW(em.LinkEntity<SecondEntity>("FirstEntity"), Net::Exception);
+            EXPECT_TRUE(em.IsLinked("FirstEntity"));
+            EXPECT_FALSE(em.IsLinked("Unknown"));
+        }
+        {
+            Net::EntityManager em;
+            EXPECT_NO_THROW(em.LinkEntity<FirstEntity>("FirstEntity"));
+            EXPECT_NO_THROW(em.LinkEntity<FirstEntity>("FirstEntity").
+                                LinkVariable("Integer", &FirstEntity::Integer).
+                                LinkVariable("Float", &FirstEntity::Float).
+                                LinkVariable("Double", &FirstEntity::Double));
 
-            server.LinkEntity<TestEntity>("TestEntity");
+            EXPECT_TRUE(em.IsLinked("FirstEntity"));
+            EXPECT_FALSE(em.IsLinked("Unknown"));
+        }
+        {
+            Net::EntityManager em;
+            EXPECT_NO_THROW(em.LinkEntity<FirstEntity>("FirstEntity"));
+            auto & entityLink = em.LinkEntity<FirstEntity>("FirstEntity");
+
+            entityLink.LinkVariable("Integer", &FirstEntity::Integer);
+            entityLink.LinkVariable("Float", &FirstEntity::Float);
+            entityLink.LinkVariable("Double", &FirstEntity::Double);
+
+            EXPECT_TRUE(em.IsLinked("FirstEntity"));
+            EXPECT_FALSE(em.IsLinked("Unknown"));
+
+            EXPECT_TRUE(entityLink.IsLinked("Integer"));
+            EXPECT_TRUE(entityLink.IsLinked("Float"));
+            EXPECT_TRUE(entityLink.IsLinked("Double"));
+            EXPECT_FALSE(entityLink.IsLinked("Unknown"));
         }
     }
 }

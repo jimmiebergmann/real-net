@@ -23,37 +23,16 @@
 *
 */
 
-#include <EntityManager.hpp>
+#include <core/VariableImp.hpp>
 
 namespace Net
 {
 
-    EntityManager::~EntityManager()
-    {
-    }
-
-    EntityManager::EntityManager()
-    {
-    }
-
-    void EntityManager::UnlinkEntity(const std::string & name)
+    namespace Core
     {
 
-    }
 
-    bool EntityManager::IsLinked(const std::string & name) const
-    {
-        return m_EntityLinks.find(name) != m_EntityLinks.end();
-    }
 
-    void EntityManager::ReadMessage(const unsigned char * message, const size_t size)
-    {
-
-    }
-
-    unsigned char * EntityManager::WriteMessage(const size_t & size, const size_t & entities)
-    {
-        return nullptr;
     }
 
 }

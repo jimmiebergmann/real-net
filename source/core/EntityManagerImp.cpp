@@ -31,9 +31,14 @@ namespace Net
     namespace Core
     {
 
+        EntityLinkageImp::~EntityLinkageImp()
+        {
+
+        }
+
         EntityManagerImp::~EntityManagerImp()
         {
-            for(auto it = m_EntityLinkages.begin(); it != m_EntityLinkages.end(); it++)
+            for(auto it = m_EntityLinks.begin(); it != m_EntityLinks.end(); it++)
             {
                 delete it->second;
             }

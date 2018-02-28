@@ -27,7 +27,6 @@
 
 #include <core/EntityManagerImp.hpp>
 
-
 namespace Net
 {
 
@@ -36,10 +35,32 @@ namespace Net
     *        Linking entity classes with entity manager.
     *
     */
-    class EntityLinkage : public Core::EntityLinkageImp
+    template <typename EntityClass>
+    class EntityLinkage final : public Core::EntityLinkageImp
     {
 
     public:
+
+        friend class EntityManager;
+
+        /**
+        * @breif Link variable to entity linkage.
+        *        If name already is linked, the new variable linkage will replace the old.
+        *
+        * @param name       Name of variable.
+        * @param variable   Pointer to entity variable.
+        *
+        */
+        template <typename Type>
+        EntityLinkage<EntityClass> & LinkVariable(const std::string & name, Variable<Type> EntityClass::* variable);
+
+        /**
+        * @breif Check if given name of variable is linked.
+        *
+        */
+        bool IsLinked(const std::string & name) const;
+
+    protected:
 
         /**
         * @breif Destructor.
@@ -47,12 +68,19 @@ namespace Net
         */
         ~EntityLinkage();
 
+    private:
+
         /**
-        * @breif Link variable to entity linkage.
+        * @breif Constructor.
         *
         */
-        EntityLinkage & RegisterVariable(const std::string & name);
+        EntityLinkage();
 
+        /**
+        * @breif Copy constructor.
+        *
+        */
+        EntityLinkage(const EntityLinkage & entityLinkage);
     };
 
 
@@ -74,15 +102,23 @@ namespace Net
         /**
         * @breif Link entity to a certain name.
         *
+        * @throw Exception  If name already is linked, but not of same EntityClass type.
+        *
         */
         template <typename EntityClass>
-        EntityLinkage & LinkEntity(const std::string & name);
+        EntityLinkage<EntityClass> & LinkEntity(const std::string & name);
 
         /**
         * @breif Unlink entity by given name.
         *
         */
         void UnlinkEntity(const std::string & name);
+
+        /**
+        * @breif Check if given name of entity is linked.
+        *
+        */
+        bool IsLinked(const std::string & name) const;
 
         /**
         * @breif Create new entity.
@@ -92,6 +128,12 @@ namespace Net
         EntityClass * CreateEntity(const std::string & name);
 
     protected:
+
+        /**
+        * @breif Constructor.
+        *
+        */
+        EntityManager();
 
         /**
         * @breif Read incoming entity message.
@@ -113,8 +155,18 @@ namespace Net
         */
         unsigned char * WriteMessage(const size_t & size, const size_t & entities);
 
+    private:
+
+        /**
+        * @breif Copy constructor.
+        *
+        */
+        EntityManager(const EntityManager & entityManager);
+
+        REALNET_TEST_FRIEND ///< Allow private tests.
+
     };
 
-    #include <EntityManager.inl> ///< Include inline definitions.
+    #include <core/EntityManager.inl> ///< Include inline definitions.
 
 }

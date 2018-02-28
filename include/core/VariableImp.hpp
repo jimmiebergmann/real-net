@@ -26,71 +26,68 @@
 #pragma once
 
 #include <core/Build.hpp>
-#include <Entity.hpp>
-#include <Variable.hpp>
-#include <typeinfo>
-#include <string>
-#include <map>
 
 namespace Net
 {
 
-    class EntityManager;
-
     namespace Core
     {
 
-        class EntityManagerImp;
-
-        class EntityLinkageImp
-        {
-
-        public:
-
-            friend class Net::EntityManager;
-            friend class EntityManagerImp;
-
-        protected:
-
-            /**
-            * @breif Destructor.
-            *
-            */
-            ~EntityLinkageImp();
-
-            typedef std::map<std::string, Core::VariableBase Entity::*> VariableLinkMap;
-
-            Entity*(*m_AllocationFunction)();    ///< Pointer to entity allocation function.
-            size_t m_TypeHash;                   ///< Hash code of entity class.
-            std::string m_ClassName;             ///< Name of entity class.
-            VariableLinkMap m_VariableLinks;     ///< Map of variable links.
-
-        };
-
-        class EntityManagerImp
+        /**
+        * @breif Base class of variable.
+        *
+        */
+        class VariableBase
         {
 
         protected:
 
             /**
-            * @breif Destructor.
+            * @breif Variable implementation class.
+            *
+            * @param data   Pointer to data to copy to variable.
+            * @param size   Size of data.
             *
             */
-            ~EntityManagerImp();
-
-            /**
-            * @breif Function for allocating a new entity.
-            *
-            */
-            template <typename T>
-            static Entity * AllocateEntity();
-
-            std::map<std::string, EntityLinkageImp *>   m_EntityLinks;   ///< Map of all entity links.
-            std::map<EntityIdType, Entity *>            m_Entities;         ///< Map of all entities.
+            virtual bool CopyData(const void * data, const size_t size) = 0;
 
         };
 
-         #include <core/EntityManagerImp.inl> ///< Include inline definitions.
+        /**
+        * @breif Variable implementation class.
+        *
+        */
+        template <typename Type>
+        class VariableImp : public VariableBase
+        {
+
+        protected:
+
+            /**
+            * @breif Constructor.
+            *
+            * @param value   Initialize variable by value.
+            *
+            */
+            VariableImp();
+            VariableImp(const Type & value);
+
+            Type m_Value; ///< Value of variable.
+
+        private:
+
+            /**
+            * @breif Variable implementation class.
+            *
+            * @param data   Pointer to data to copy to variable.
+            * @param size   Size of data.
+            *
+            */
+            virtual bool CopyData(const void * data, const size_t size);
+
+        };
+
+        #include <core/VariableImp.inl> ///< Include inline definitions.
 
     }
 

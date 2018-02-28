@@ -19,14 +19,14 @@ before_script:
       sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6';
     fi
 script:
-  # Compile test.
+  # Compile google test.
   - cd test/googletest/googletest/make/
   - make
+  # Compile real-net test.
   - cd ../../../../
   - make test
   # Run test.
-  - cd bin/
-  - ifconfig
+  - cd test/
   - sh run_test.sh
 
 notifications:

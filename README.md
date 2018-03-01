@@ -19,5 +19,4 @@ Builds are passed if all tests are good and no memory leaks were found.
 | dev | [![Build Status](https://travis-ci.org/jimmiebergmann/real-net.svg?branch=dev)](https://travis-ci.org/jimmiebergmann/real-net)|
 
 ### License
-[MIT](https://github.com/jimmiebergmann/real-net/blob/master/LICENSE)
-
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/jimmiebergmann/real-net/blob/master/LICENSE)  

@@ -87,7 +87,7 @@ namespace Net
 
         };
 
-        #include <core/VariableImp.inl> ///< Include inline definitions.
+        #include <core/inline/VariableImp.inl> ///< Include inline definitions.
 
     }
 

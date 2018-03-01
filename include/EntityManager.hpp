@@ -167,6 +167,6 @@ namespace Net
 
     };
 
-    #include <core/EntityManager.inl> ///< Include inline definitions.
+    #include <inline/EntityManager.inl> ///< Include inline definitions.
 
 }

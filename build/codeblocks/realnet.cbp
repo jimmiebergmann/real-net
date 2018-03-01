@@ -55,7 +55,6 @@
 		<Unit filename="../../include/Clock.hpp" />
 		<Unit filename="../../include/Entity.hpp" />
 		<Unit filename="../../include/EntityManager.hpp" />
-		<Unit filename="../../include/EntityManager.inl" />
 		<Unit filename="../../include/Exception.hpp" />
 		<Unit filename="../../include/Log.hpp" />
 		<Unit filename="../../include/Message.hpp" />
@@ -66,6 +65,7 @@
 		<Unit filename="../../include/Variable.hpp" />
 		<Unit filename="../../include/core/Build.hpp" />
 		<Unit filename="../../include/core/DefaultLog.hpp" />
+		<Unit filename="../../include/core/EntityManager.inl" />
 		<Unit filename="../../include/core/EntityManagerImp.hpp" />
 		<Unit filename="../../include/core/EntityManagerImp.inl" />
 		<Unit filename="../../include/core/Packet.hpp" />
@@ -75,6 +75,9 @@
 		<Unit filename="../../include/core/Socket.hpp" />
 		<Unit filename="../../include/core/SocketSelector.hpp" />
 		<Unit filename="../../include/core/UdpSocket.hpp" />
+		<Unit filename="../../include/core/Variable.inl" />
+		<Unit filename="../../include/core/VariableImp.hpp" />
+		<Unit filename="../../include/core/VariableImp.inl" />
 		<Unit filename="../../include/core/platform/LinuxHeaders.hpp" />
 		<Unit filename="../../include/core/platform/WindowsHeaders.hpp" />
 		<Unit filename="../../source/Address.cpp" />
@@ -97,6 +100,7 @@
 		<Unit filename="../../source/core/ServerImp.cpp" />
 		<Unit filename="../../source/core/SocketSelector.cpp" />
 		<Unit filename="../../source/core/UdpSocket.cpp" />
+		<Unit filename="../../source/core/VariableImp.cpp" />
 		<Extensions>
 			<envvars />
 			<code_completion />

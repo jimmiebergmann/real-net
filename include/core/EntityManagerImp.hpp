@@ -90,7 +90,7 @@ namespace Net
 
         };
 
-         #include <core/EntityManagerImp.inl> ///< Include inline definitions.
+         #include <core/inline/EntityManagerImp.inl> ///< Include inline definitions.
 
     }
 

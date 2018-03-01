@@ -58,6 +58,6 @@ namespace Net
 
     };
 
-    #include <core/Variable.inl> ///< Include inline definitions.
+    #include <inline/Variable.inl> ///< Include inline definitions.
 
 }

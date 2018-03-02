@@ -3,24 +3,18 @@ All types are in litte endian.
 Positions are in relation to the current block.
 
 # Packet
-| Position | Type                              | Description         |
-| -------- | --------------------------------- | ------------------- |
-| 0        | [Header block](#Header%20block)   | Packet header data. |
-
-Packet continues with one of the following blocks, depending on the value of [Header block](#Header%20block) - [Packet type](#Packet%20type).
-| Position | Packet type | Type                                              |
-| -------- | ----------- | ------------------------------------------------- |
-| 2        | 0x00        | [Connection block](#Connection%20block)           |
-|          | 0x01        | [Acknowledgement block](#Acknowledgement%20block) |
-|          | 0x02        | [Linking block](#Linking%20block)                 |
-|          | 0x03        | [Entity block](#Entity%20block)                   |
-
-## Header block
-
 | Position | Type                            | Byte count | Data type | Description                   |
 | -------- | ------------------------------- | ---------- | ----------|------------------------------ |
 | 0        | [Packet type](#Packet%20type)   | 1          | Enum      | Type of packet.               |
-| 1        | [Header flags](#Header%20flags) | 1          | Bit field | Properties of packet.         |
+
+Packet continues with one of the following blocks, depending on the value of [Header block](#Header%20block) - [Packet type](#Packet%20type).
+
+| Position | Packet type | Type                                              |
+| -------- | ----------- | ------------------------------------------------- |
+| 1        | 0x00        | [Connection block](#Connection%20block)           |
+|          | 0x01        | [Acknowledgement block](#Acknowledgement%20block) |
+|          | 0x02        | [Linking block](#Linking%20block)                 |
+|          | 0x03        | [Entity block](#Entity%20block)                   |
 
 ### Packet type
 | Value | Sender        | Description             |
@@ -30,7 +24,7 @@ Packet continues with one of the following blocks, depending on the value of [He
 | 0x02  | Server        | Linking packet.         |
 | 0x03  | Server        | Entity packet.          |
 
-### Header flags
+### Packet flags
 Each bit represents different properties of the packet.
 
 | Bit | Value | Description                                                                                                            |
@@ -42,18 +36,19 @@ Each bit represents different properties of the packet.
 
 ## Connection block
 
-| Position |Type                                                     | Byte count | Data type | Description                |
-| -------- |-------------------------------------------------------- | ---------- | ----------|--------------------------- |
+| Position |Type                                                     | Byte count | Data type | Description                 |
+| -------- |-------------------------------------------------------- | ---------- | ----------|---------------------------- |
 | 0        | [Connection message type](#Connection%20message%20type) | 1          | Enum      | Type of connection message. |
-| 2        | [Sequence](#Header%20flags)     | 2          | ushort    | Sequence number of packet.    |
+| 1        | [Packet flags](#Packet%20flags)                         | 1          | bit field | Packet properties.          |
+| 2        | [Sequence](#Sequence)                                   | 2          | ushort    | Sequence number of packet.  |
 
 Block continues with one of the following blocks, depending on value of [Connection message type](#Connection%20message%20type).
 
-| Position | Connection message type | Type                                            |
-| -------- | ----------------------- | ----------------------------------------------- |
-| 1        | 0x00                    | [Initialization block](#Initialization%20block) |
-|          | 0x01                    | [Accepting block](#Accepting%20block)           |
-|          | 0x02                    | [Disconnect block](#Disconnect%20block)         |
+| Position | Connection message type | Type                                                |
+| -------- | ----------------------- | --------------------------------------------------- |
+| 3        | 0x00                    | [Initialization message](#Initialization%20message) |
+|          | 0x01                    | [Accepting message](#Accepting%20message)           |
+|          | 0x02                    | [Disconnect message](#Disconnect%20message)         |
 
 ### Connection block type
 Describes the type of connection block.
@@ -64,17 +59,17 @@ Describes the type of connection block.
 | 0x01  | Server | Accepting.                     |
 | 0x02  | Server | Disconnect/Rejecting.          |
 
-### Initialization block
+#### Initialization message
 [Connection block](#Connection%20block) - [Sequence](#Header%20flags) should always be 0.
 
-### Accepting block
+### Accepting message
 [Connection block](#Connection%20block) - [Sequence](#Header%20flags) should always be 1.
 
 | Position | Type                            | Byte count | Data type | Description       |
 | -------- | ------------------------------- | ---------- | ----------|------------------ |
 | 0        | [Timestamp](#Timestamp)         | 8          | uint64    | Sender timestamp. |
 
-### Disconnect block
+### Disconnect message
 This block is empty for disconnections sent by clients.
 
 | Position | Type                                   | Description     |
@@ -84,6 +79,7 @@ This block is empty for disconnections sent by clients.
 #### Data block 255
 Data starts at position 1 and consists of n bytes.
 Length of data is specified by value of byte 0.
+
 | Position | Byte count | Data type   | Description   |
 | -------- | ---------- | ------------|-------------- |
 | 0        | 1          | uchar       | Size of data. |
@@ -96,6 +92,7 @@ Length of data is specified by value of byte 0.
 
 ## Entity block
 IGNORE THIS.
+
 | Position | Type                            | Byte count | Data type | Description                   |
 | -------- | ------------------------------- | ---------- | ----------|------------------------------ |
 | 1        | [Header flags](#Header%20flags) | 1          | Bit field | Properties of packet.         |

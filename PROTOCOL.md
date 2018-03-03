@@ -31,6 +31,9 @@ Linking and unlinking packets share the same order queue and message packets has
       - 1.3.5.3 - Unlinking entity block
       - 1.3.5.4 - Unlinking entity variable block
     - 1.3.6 - Entity block
+      - 1.3.6.1 - Entity link block
+      - 1.3.6.2 - Entity link entity block
+      - 1.3.6.3 - Entity variable block
     - 1.3.7 - Message block
   - 1.4 - Sequence
   - 1.5 - Timestamp
@@ -38,7 +41,7 @@ Linking and unlinking packets share the same order queue and message packets has
   - 2.1 - Handshake
   - 2.2 - Rejection
 - 3 - Disconnection
-- 4 - Guidelines
+- 4 - Alive packet
 
 # 1 - Packet block
 | Position | Type                            | Byte count | Data type | Description                   |
@@ -48,7 +51,7 @@ Linking and unlinking packets share the same order queue and message packets has
 
 Packet continues with one of the following blocks, depending on the value of [Packet block](#Packet%20block) - [Packet type](#Packet%20type).
 
-| Position | Packet type | Type                                              | Notice              |
+| Position | Packet type | Type                                              | Notice               |
 | -------- | ----------- | ------------------------------------------------- | -------------------- |
 | 1        | 0x00        | [Connection block](#Connection%20block)           |                      |
 |          | 0x01        | [Disconnection block](#Disconnection%20block)     | Only sent by server. |
@@ -143,6 +146,7 @@ Reliable and Ordered flags in [Packet flags](#[Packet%20flags]) are always 1.
 | 1        | [Sequence](#Sequence)              | 2          | ushort    | Sequence number of packet. |
 | 3        |                                    | 1          | uchar     | Variable linking count.    |
 | 4        |                                    | 1          | uchar     | Entity linking count.      |
+| 5        | ...                                | ...        | ...       | ...                        |
 
 Followed by [Variable linking block](#Variable%20linking%20block), occuring **Variable linking count** times.
 
@@ -168,6 +172,7 @@ Followed by [Entity linking block](#Entity%20linking%20block), occuring **Entity
 | 1          | uchar     | Entity name size.              |
 | max 255    | uchar []  | Entity name.                   |
 | 1          | uchar     | Entity variable linking count. |
+| ...        | ...       | ...                            |
 
 Followed by [Entity variable linking block](#Entity%20variable%20linking%20block), occuring **Entity variable linking count** times, for each [Entity linking block](#Entity%20linking%20block).
 
@@ -223,6 +228,41 @@ Describes the type of unlinking block.
 ### 1.3.6 - Entity block
 Ordered flag in [Packet flags](#[Packet%20flags]) is always 0.
 
+| Position | Type                            | Byte count | Data type | Description                |
+| -------- | ------------------------------- | ---------- | --------- | -------------------------- |
+| 0        | [Packet flags](#Packet%20flags) | 1          | uchar     | Packet properties.         |
+| 1        | [Sequence](#Sequence)           | 2          | ushort    | Sequence number of packet. |
+| 3        | [Timestamp](#Timestamp)         | 8          | uint64    | Sender timestamp.          |
+| 11       |                                 | 1          | uchar     | Entity link count.         |
+| 12       | ...                             | ...        | ...       | ...                        |
+
+Followed by [Entity link block](#Entity%20link%20block), occuring **Entity link count** times.
+
+### 1.3.6.1 - Entity link block
+| Position | Byte count | Data type | Description    |
+| -------- | ---------- | --------- | -------------- |
+| 0        | 2          | ushort    | Entity link ID |
+| 2        | 1          | uchar     | Entity count.  |
+| 3        | ...        | ...       | ...            |
+
+Followed by [Entity link entity block](#Entity%20link%20entity%20block), occuring **Entity count** times, for each [Entity link block](#Entity%20link%20block).
+
+### 1.3.6.2 - Entity link entity block
+| Position | Type                            | Byte count | Data type | Description                |
+| -------- | ------------------------------- | ---------- | --------- | -------------------------- |
+| 0        | [Entity ID](#Entity%20ID)       | 2          | ushort    | [Entity ID](#Entity%20ID)  |
+| 2        |                                 | 1          | uchar     | Variable count.            |
+| 3        | ...                             | ...        | ...       | ...                        |
+
+Followed by [Entity variable block](#Entity%20variable%20block), occuring **Variable count** times, for each [Entity link entity block](#Entity%20link%20entity%20block).
+
+### 1.3.6.3 - Entity variable block
+| Position | Byte count | Data type | Description           |
+| -------- | ---------- | --------- | --------------------- |
+| 0        | 1          | uchar     | Entity variable link. |
+| 1        | 1          | uchar     | Data size.            |
+| 2        | *          | uchar *   | Data.                 |
+
 ### 1.3.7 - Message block
 | Position | Type                            | Byte count | Data type | Description                |
 | -------- |-------------------------------- | ---------- | --------- | -------------------------- |
@@ -268,5 +308,10 @@ Rejection(0x02) packet includes an optional reason text.
 # 3 - Disconnection
 Disconnection packets can be sent by server or client at any time.  
 Packet sent by server includes an optional reason text.
+
+# 4 - Alive packet
+If the connection is lost, but no disconnect packet is sent, then it's important to send an "alive" or "ping" packet,  
+which is being acknowledged by the receiver. The connection is treated as lost when no new packets are received for any timeout, defined by respective implementation.  
+Alive packets are sent every other time from server and client. The server will always send the first one.
 
 

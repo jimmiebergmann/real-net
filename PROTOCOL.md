@@ -157,11 +157,12 @@ Followed by [Variable linking block](#Variable%20linking%20block), occuring **Va
   - [Entity variable linking block](#Entity%20variable%20linking%20block)
 
 #### 1.3.4.2 - Variable linking block
-| Byte count | Data type | Description         |
-| ---------- | --------- | ------------------- |
-| 2          | ushort    | Variable link ID.   |
-| 1          | uchar     | Variable name size. |
-| max 255    | uchar []  | Variable name.      |
+| Byte count | Type                              | Data type | Description         |
+| ---------- | --------------------------------- | --------- | ------------------- |
+| 2          |                                   | ushot     | Variable link ID.   |
+| 1          | [variable type](#Variable%20type) | uchar     | Variable type.      |
+| 1          |                                   | uchar     | Variable name size. |
+| max 255    |                                   | uchar []  | Variable name.      |
 
 Followed by [Entity linking block](#Entity%20linking%20block), occuring **Entity linking count** times.
 
@@ -177,11 +178,27 @@ Followed by [Entity linking block](#Entity%20linking%20block), occuring **Entity
 Followed by [Entity variable linking block](#Entity%20variable%20linking%20block), occuring **Entity variable linking count** times, for each [Entity linking block](#Entity%20linking%20block).
 
 #### 1.3.4.4 - Entity variable linking block
-| Byte count | Data type | Description                |
-| ---------- | --------- | -------------------------- |
-| 1          | uchar     | Entity variable link ID.   |
-| 1          | uchar     | Entity variable name size. |
-| max 255    | uchar []  | Entity variable name.      |
+| Byte count | Type                              | Data type | Description                |
+| ---------- | --------------------------------- | --------- | -------------------------- |
+| 1          |                                   | uchar     | Entity variable link ID.   |
+| 1          | [variable type](#Variable%20type) | uchar     | Variable type.             |
+| 1          |                                   | uchar     | Entity variable name size. |
+| max 255    |                                   | uchar []  | Entity variable name.      |
+
+#### 1.3.4.5 - Variable type
+| Value | Description                | Type byte count |
+| ----- | -------------------------- | --------------- |
+| 0x00  | char.                      | 1               |
+| 0x01  | uchar.                     | 1               |
+| 0x02  | short.                     | 2               |
+| 0x03  | ushort.                    | 2               |
+| 0x04  | int.                       | 4               |
+| 0x05  | uint.                      | 4               |
+| 0x06  | int64.                     | 8               |
+| 0x07  | uint64.                    | 8               |
+| 0x08  | float.                     | 4               |
+| 0x09  | double.                    | 8               |
+| 0x0A  | char []                    | *               |
 
 ### 1.3.5 - Unlinking block
 Reliable and Ordered flags in [Packet flags](#[Packet%20flags]) are always 1.
@@ -233,35 +250,35 @@ Ordered flag in [Packet flags](#[Packet%20flags]) is always 0.
 | 0        | [Packet flags](#Packet%20flags) | 1          | uchar     | Packet properties.         |
 | 1        | [Sequence](#Sequence)           | 2          | ushort    | Sequence number of packet. |
 | 3        | [Timestamp](#Timestamp)         | 8          | uint64    | Sender timestamp.          |
-| 11       |                                 | 1          | uchar     | Entity link count.         |
+| 11       |                                 | 1          | uchar     | Entity link IDcount.         |
 | 12       | ...                             | ...        | ...       | ...                        |
 
 Followed by [Entity link block](#Entity%20link%20block), occuring **Entity link count** times.
 
 ### 1.3.6.1 - Entity link block
-| Position | Byte count | Data type | Description    |
-| -------- | ---------- | --------- | -------------- |
-| 0        | 2          | ushort    | Entity link ID |
-| 2        | 1          | uchar     | Entity count.  |
-| 3        | ...        | ...       | ...            |
+| Position | Byte count | Data type | Description                    |
+| -------- | ---------- | --------- | ------------------------------ |
+| 0        | 2          | ushort    | Entity link ID                 |
+| 2        | 1          | uchar     | Entity variable link ID count. |
+| 3        | ...        | ...       | ...                            |
 
-Followed by [Entity link entity block](#Entity%20link%20entity%20block), occuring **Entity count** times, for each [Entity link block](#Entity%20link%20block).
+Followed by [Entity variable link block](#Entity%20link%20entity%20block), occuring **Entity count** times, for each [Entity link block](#Entity%20link%20block).
 
-### 1.3.6.2 - Entity link entity block
-| Position | Type                            | Byte count | Data type | Description                |
-| -------- | ------------------------------- | ---------- | --------- | -------------------------- |
-| 0        | [Entity ID](#Entity%20ID)       | 2          | ushort    | [Entity ID](#Entity%20ID)  |
-| 2        |                                 | 1          | uchar     | Variable count.            |
-| 3        | ...                             | ...        | ...       | ...                        |
+### 1.3.6.2 - Entity variable link entity block
+| Position | Byte count | Data type | Description              |
+| -------- | ---------- | --------- | ------------------------ |
+| 0        | 2          | ushort    | Entity variable link ID. |
+| 2        | 1          | uchar     | Entity ID count.         |
+| 3        | ...        | ...       | ...                      |
 
 Followed by [Entity variable block](#Entity%20variable%20block), occuring **Variable count** times, for each [Entity link entity block](#Entity%20link%20entity%20block).
 
 ### 1.3.6.3 - Entity variable block
-| Position | Byte count | Data type | Description           |
-| -------- | ---------- | --------- | --------------------- |
-| 0        | 1          | uchar     | Entity variable link. |
-| 1        | 1          | uchar     | Data size.            |
-| 2        | *          | uchar *   | Data.                 |
+| Position | Type                      | Byte count | Data type | Description              |
+| -------- | ------------------------- | ---------- | --------- | ------------------------ |
+| 0        | [Entity ID](#Entity%20ID) | 1          | uchar     |[Entity ID](#Entity%20ID) |
+| 1        |                           | 1          | uchar     | Data size.               |
+| 2        |                           | max 255    | uchar *   | Data.                    |
 
 ### 1.3.7 - Message block
 | Position | Type                            | Byte count | Data type | Description                |

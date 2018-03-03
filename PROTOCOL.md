@@ -157,12 +157,12 @@ Followed by [Variable linking block](#Variable%20linking%20block), occuring **Va
   - [Entity variable linking block](#Entity%20variable%20linking%20block)
 
 #### 1.3.4.2 - Variable linking block
-| Byte count | Type                              | Data type | Description         |
-| ---------- | --------------------------------- | --------- | ------------------- |
-| 2          |                                   | ushot     | Variable link ID.   |
-| 1          | [variable type](#Variable%20type) | uchar     | Variable type.      |
-| 1          |                                   | uchar     | Variable name size. |
-| max 255    |                                   | uchar []  | Variable name.      |
+| Byte count | Type                                                | Data type | Description            |
+| ---------- | --------------------------------------------------- | --------- | ---------------------- |
+| 2          |                                                     | ushot     | Variable link ID.      |
+| 1          | [Linking variable type](#Linking%20variable%20type) | uchar     | Linking variable type. |
+| 1          |                                                     | uchar     | Variable name size.    |
+| max 255    |                                                     | uchar []  | Variable name.         |
 
 Followed by [Entity linking block](#Entity%20linking%20block), occuring **Entity linking count** times.
 
@@ -178,14 +178,14 @@ Followed by [Entity linking block](#Entity%20linking%20block), occuring **Entity
 Followed by [Entity variable linking block](#Entity%20variable%20linking%20block), occuring **Entity variable linking count** times, for each [Entity linking block](#Entity%20linking%20block).
 
 #### 1.3.4.4 - Entity variable linking block
-| Byte count | Type                              | Data type | Description                |
-| ---------- | --------------------------------- | --------- | -------------------------- |
-| 1          |                                   | uchar     | Entity variable link ID.   |
-| 1          | [variable type](#Variable%20type) | uchar     | Variable type.             |
-| 1          |                                   | uchar     | Entity variable name size. |
-| max 255    |                                   | uchar []  | Entity variable name.      |
+| Byte count | Type                                                | Data type | Description                |
+| ---------- | --------------------------------------------------- | --------- | -------------------------- |
+| 1          |                                                     | uchar     | Entity variable link ID.   |
+| 1          | [Linking variable type](#Linking%20variable%20type) | uchar     | Linking variable type.     |
+| 1          |                                                     | uchar     | Entity variable name size. |
+| max 255    |                                                     | uchar []  | Entity variable name.      |
 
-#### 1.3.4.5 - Variable type
+#### 1.3.4.5 - Linking variable type
 | Value | Description                | Type byte count |
 | ----- | -------------------------- | --------------- |
 | 0x00  | char.                      | 1               |

@@ -21,15 +21,12 @@ Linking and unlinking packets share the same order queue and message packets has
     - 1.3.2 - Disconnection block
     - 1.3.3 - Acknowledgement block
     - 1.3.4 - Linking block
-      - 1.3.4.1 - Structure of linking block.
-      - 1.3.4.2 - Variable linking block
-      - 1.3.4.3 - Entity linking block
-      - 1.3.4.4 - Entity variable linking block
-    - 1.3.5 - Unlinking block
-      - 1.3.5.1 - Unlinking block type
-      - 1.3.5.2 - Unlinking variable block
-      - 1.3.5.3 - Unlinking entity block
-      - 1.3.5.4 - Unlinking entity variable block
+      - 1.3.5.1 - Linking block type
+      - 1.3.4.2 - Structure of linking block.
+      - 1.3.4.3 - Variable linking block
+      - 1.3.4.4 - Entity linking block
+      - 1.3.4.5 - Entity variable linking block
+      - 1.3.4.6 - Linking variable data type
     - 1.3.6 - Entity block
       - 1.3.6.1 - Entity link block
       - 1.3.6.2 - Entity link entity block
@@ -42,6 +39,7 @@ Linking and unlinking packets share the same order queue and message packets has
   - 2.2 - Rejection
 - 3 - Disconnection
 - 4 - Alive packet
+- 5 - Linking
 
 # 1 - Packet block
 | Position | Type                            | Byte count | Data type | Description                   |
@@ -140,23 +138,39 @@ Reliable flag in [Packet flags](#[Packet%20flags]) is always 0.
 ### 1.3.4 - Linking block
 Reliable and Ordered flags in [Packet flags](#[Packet%20flags]) are always 1.
 
-| Position | Type                               | Byte count | Data type | Description                |
-| -------- |----------------------------------- | ---------- | --------- | -------------------------- |
-| 0        | [Packet flags](#Packet%20flags)    | 1          | uchar     | Packet properties.         |
-| 1        | [Sequence](#Sequence)              | 2          | ushort    | Sequence number of packet. |
-| 3        |                                    | 1          | uchar     | Variable linking count.    |
-| 4        |                                    | 1          | uchar     | Entity linking count.      |
-| 5        | ...                                | ...        | ...       | ...                        |
+| Position | Type                                          | Byte count | Data type | Description                |
+| -------- |---------------------------------------------- | ---------- | --------- | -------------------------- |
+| 0        | [Packet flags](#Packet%20flags)               | 1          | uchar     | Packet properties.         |
+| 1        | [Sequence](#Sequence)                         | 2          | ushort    | Sequence number of packet. |
+| 1        | [Linking block type](#Linking%20block%20type) | 2          | ushort    | Type of linking packet.    |
 
-Followed by [Variable linking block](#Variable%20linking%20block), occuring **Variable linking count** times.
+Followed by data below, if [Linking block type](#Linking%20block%20type) is 0x01.
 
-#### 1.3.4.1 - Structure of linking block.
+| Position | Byte count | Data type | Description             |
+| -------- | ---------- | --------- | ----------------------- |
+| 3        | 1          | uchar     | Variable linking count. |
+| 4        | 1          | uchar     | Entity linking count.   |
+| 5        | ...        | ...       | ...                     |
+
+Followed by [Variable linking block](#Variable%20linking%20block), occuring **Variable linking count** times,
+and followed by [Entity linking block](#Entity%20linking%20block), occuring **Entity linking count** times.
+
+### 1.3.4.1 - Linking block type
+Describes the type of linking block.
+
+| Value | Sernder | Description |
+| ----- | ------- |------------ |
+| 0x00  | Client  | Request.    |
+| 0x01  | Server  | Answer.     |
+| 0x02  | Server  | Done.       |
+
+#### 1.3.4.2 - Structure of linking block.
 - Header data
 - [Variable linking block](#Variable%20linking%20block)
 - [Entity linking block](#Entity%20linking%20block)
   - [Entity variable linking block](#Entity%20variable%20linking%20block)
 
-#### 1.3.4.2 - Variable linking block
+#### 1.3.4.3 - Variable linking block
 | Byte count | Type                                                | Data type | Description            |
 | ---------- | --------------------------------------------------- | --------- | ---------------------- |
 | 2          |                                                     | ushot     | Variable link ID.      |
@@ -164,9 +178,7 @@ Followed by [Variable linking block](#Variable%20linking%20block), occuring **Va
 | 1          |                                                     | uchar     | Variable name size.    |
 | max 255    |                                                     | uchar []  | Variable name.         |
 
-Followed by [Entity linking block](#Entity%20linking%20block), occuring **Entity linking count** times.
-
-#### 1.3.4.3 - Entity linking block
+#### 1.3.4.4 - Entity linking block
 | Byte count | Data type | Description                    |
 | ---------- | --------- | ------------------------------ |
 | 2          | ushort    | Entity link ID.                |
@@ -177,15 +189,15 @@ Followed by [Entity linking block](#Entity%20linking%20block), occuring **Entity
 
 Followed by [Entity variable linking block](#Entity%20variable%20linking%20block), occuring **Entity variable linking count** times, for each [Entity linking block](#Entity%20linking%20block).
 
-#### 1.3.4.4 - Entity variable linking block
-| Byte count | Type                                                | Data type | Description                |
-| ---------- | --------------------------------------------------- | --------- | -------------------------- |
-| 1          |                                                     | uchar     | Entity variable link ID.   |
-| 1          | [Linking variable type](#Linking%20variable%20type) | uchar     | Linking variable type.     |
-| 1          |                                                     | uchar     | Entity variable name size. |
-| max 255    |                                                     | uchar []  | Entity variable name.      |
+#### 1.3.4.5 - Entity variable linking block
+| Byte count | Type                                                            | Data type | Description                |
+| ---------- | --------------------------------------------------------------- | --------- | -------------------------- |
+| 1          |                                                                 | uchar     | Entity variable link ID.   |
+| 1          | [Linking variable data type](#Linking%20variable%20data%20type) | uchar     | Linking variable type.     |
+| 1          |                                                                 | uchar     | Entity variable name size. |
+| max 255    |                                                                 | uchar []  | Entity variable name.      |
 
-#### 1.3.4.5 - Linking variable type
+#### 1.3.4.6 - Linking variable data type
 | Value | Description                | Type byte count |
 | ----- | -------------------------- | --------------- |
 | 0x00  | char.                      | 1               |
@@ -200,47 +212,6 @@ Followed by [Entity variable linking block](#Entity%20variable%20linking%20block
 | 0x09  | double.                    | 8               |
 | 0x0A  | char []                    | *               |
 
-### 1.3.5 - Unlinking block
-Reliable and Ordered flags in [Packet flags](#[Packet%20flags]) are always 1.
-
-| Position |Type                                                | Byte count | Data type | Description                |
-| -------- |--------------------------------------------------- | ---------- | --------- | -------------------------- |
-| 0        | [Packet flags](#Packet%20flags)                    | 1          | uchar     | Packet properties.         |
-| 1        | [Sequence](#Sequence)                              | 2          | ushort    | Sequence number of packet. |
-| 3        | [Unlinking block type](#CUnlinking%20block%20type) | 1          | uchar     | Type of unlinking block.   |
-
-Block continues with one of the following blocks, depending on value of [Connection block type](#Connection%20block%20type).
-
-| Position | Connection block type | Type                                                                      |
-| -------- | --------------------- | ------------------------------------------------------------------------- |
-| 1        | 0x00                  | [Unlinking variable block](#Unlinking%20variable%20block)                 |
-|          | 0x01                  | [Unlinking entity block](#Unlinking%20entity%20block)                     |
-|          | 0x02                  | [Unlinking entity variable block](#Unlinking%20entity%20variable%20block) |
-
-### 1.3.5.1 - Unlinking block type
-Describes the type of unlinking block.
-
-| Value | Description                |
-| ----- | -------------------------- |
-| 0x00  | Variable unlinking         |
-| 0x01  | Entity unlinking.          |
-| 0x02  | Entity variable unlinking. |
-
-### 1.3.5.2 - Unlinking variable block
-| Position | Byte count | Data type | Description       |
-| -------- | ---------- | --------- | ----------------- |
-| 0        | 2          | ushort    | Variable link ID. |
-
-### 1.3.5.3 - Unlinking entity block
-| Position | Byte count | Data type | Description     |
-| -------- | ---------- | --------- | --------------- |
-| 0        | 2          | ushort    | Entity link ID. |
-
-### 1.3.5.4 - Unlinking entity variable block
-| Position | Byte count | Data type | Description              |
-| -------- | ---------- | --------- | ------------------------ |
-| 0        | 2          | ushort    | Entity link ID.          |
-| 2        | 1          | uchar     | Entity variable link ID. |
 
 ### 1.3.6 - Entity block
 Ordered flag in [Packet flags](#[Packet%20flags]) is always 0.
@@ -331,4 +302,7 @@ If the connection is lost, but no disconnect packet is sent, then it's important
 which is being acknowledged by the receiver. The connection is treated as lost when no new packets are received for any timeout, defined by respective implementation.  
 Alive packets are sent every other time from server and client. The server will always send the first one.
 
-
+# 5 - Linking
+Maps entity and variable names to readable names, as strings.
+Makes it possible for the client to verify incoming replication data.
+No replication to the client is done before the linking is requested and finished by the client.

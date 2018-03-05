@@ -16,6 +16,7 @@
 #include <Server.hpp>
 #include <core/UdpSocket.hpp>
 #include <core/SocketSelector.hpp>
+#include <core/Md5.hpp>
 
 
 #define GTEST_PRINT "\033[0;32m" << "[          ] " << "\033[0;0m"
@@ -27,6 +28,16 @@ namespace Net
     {
     }
 
+   /* TEST(Md5, tests)
+    {
+        {
+            Net::Core::Md5 md5;
+
+            md5.Hash("The quick brown fox jumps over the lazy dog");
+            EXPECT_EQ(md5.GetAsString(), "9e107d9d372bb6826bd81d3542a419d6");
+        }
+    }*/
+
     TEST(Time, tests)
     {
         // Creation
@@ -37,7 +48,6 @@ namespace Net
             EXPECT_EQ(time.AsSeconds(), 1.0f);
             EXPECT_EQ(time.AsMilliseconds(), 1000ULL);
             EXPECT_EQ(time.AsMicroseconds(), 1000000ULL);
-
         }
         {
             const Net::Time time = Net::Milliseconds(1000ULL);

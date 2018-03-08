@@ -10,36 +10,40 @@ Ordered packets are supported for linking, unlinking and message packets.
 Linking and unlinking packets share the same order queue and message packets has its own queue.
 
 # Index
-- 1 - Packet block
-  - 1.1 - Packet type
-  - 1.2 - Packet flags
-  - 1.3 - Data blocks
-    - 1.3.1 - Connection block
-      - 1.3.1.1 - Connection block type
-      - 1.3.1.2 - Accepting block
-      - 1.3.1.3 - Rejection block
-    - 1.3.2 - Disconnection block
-    - 1.3.3 - Acknowledgement block
-    - 1.3.4 - Linking block
-      - 1.3.5.1 - Linking block type
-      - 1.3.4.2 - Structure of linking block.
-      - 1.3.4.3 - Variable linking block
-      - 1.3.4.4 - Entity linking block
-      - 1.3.4.5 - Entity variable linking block
-      - 1.3.4.6 - Linking variable data type
-    - 1.3.6 - Entity block
-      - 1.3.6.1 - Entity link block
-      - 1.3.6.2 - Entity link entity block
-      - 1.3.6.3 - Entity variable block
-    - 1.3.7 - Message block
-  - 1.4 - Sequence
-  - 1.5 - Timestamp
-- 2 - Connection
-  - 2.1 - Handshake
-  - 2.2 - Rejection
-- 3 - Disconnection
-- 4 - Alive packet
-- 5 - Linking
+- 1 - [Packet block ](1%20-%20Packet%20block)
+  - 1.1 - [Packet type](1.1%20-%20Packet%20type)
+  - 1.2 - [Packet flags](1.2%20-%20Packet%20flags)
+  - 1.3 - [Data blocks](1.3%20-%20Data%20blocks)
+    - 1.3.1 - [Connection block](1.3.1%20-%20Connection%20block)
+      - 1.3.1.1 - [Connection block type](1.3.1.1%20-%20Connection%20block%20type)
+      - 1.3.1.2 - [Accepting block](1.3.1.2%20-%20Accepting%20block)
+      - 1.3.1.3 - [Rejection block](1.3.1.3%20-%20Rejection%20block)
+    - 1.3.2 - [Disconnection block](1.3.2%20-%20Disconnection%20block)
+    - 1.3.3 - [Synchronization block](1.3.3%20-%20Synchronizationn%20block)
+      - 1.3.3.1 - [Synchronization block type](1.3.3.1%20-%20Synchronizationn%20block%20type)
+      - 1.3.3.2 - [Synchronization acknowledgement block](1.3.3.2%20-%20Synchronizationn%20acknowledgement%20block)
+    - 1.3.4 - [Acknowledgement block](1.3.4%20-%20Acknowledgement%20block)
+    - 1.3.5 - [Linking block](1.3.5%20-%20Linking%20block)
+      - 1.3.5.1 - [Linking block type](1.3.5.1%20-%20Linking%20block%20type)
+      - 1.3.5.2 - [Linking table block](1.3.5.2%20-%20Linking%20table%20block)
+      - 1.3.5.3 - [Linking variable block](1.3.5.3%20-%20Linking%20variable%20block)
+      - 1.3.5.4 - [Linking Entity block](1.3.5.4%20-%20Linking%20Entity%20block)
+      - 1.3.5.5 - [Linking entity variable block](1.3.5.5%20-%20Linking%20entity%20variable%20block)
+      - 1.3.5.6 - [Linking variable data block](1.3.5.6%20-%20Linking%20variable%20data%20block)
+    - 1.3.6 - [Entity block](1.3.6%20-%20Entity%20block)
+      - 1.3.6.1 - [Entity link block](1.3.6.1%20-%20Entity%20link%20block)
+      - 1.3.6.2 - [Entity variable link entity block](1.3.6.2%20-%20Entity%20variable%20link%20entity%20block)
+      - 1.3.6.3 - [Entity variable block](1.3.6.3%20-%20Entity%20variable%20block)
+    - 1.3.7 - [Message block](1.3.7%20-%20Message%20block)
+  - 1.4 - [Sequence](1.4%20-%20Sequence)
+  - 1.5 - [Timestamp](1.5%20-%20Timestamp)
+- 2 - [Connection](2%20-%20Connection)
+  - 2.1 - [Handshake](2.1%20-%20Handshake)
+  - 2.2 - [Rejection](2.2%20-%20Rejection)
+- 3 - [Disconnection](3%20-%20Disconnection)
+- 4 - [Acknowledgement](4%20-%20Acknowledgement)
+- 5 - [Synchronization](5%20-%20Synchronization)
+- 6 - [Linking](6%20-%20Linking)
 
 # 1 - Packet block
 | Position | Type                            | Byte count | Data type | Description                   |
@@ -53,18 +57,21 @@ Packet continues with one of the following blocks, depending on the value of [Pa
 | -------- | ----------- | ------------------------------------------------- | -------------------- |
 | 1        | 0x00        | [Connection block](#Connection%20block)           |                      |
 |          | 0x01        | [Disconnection block](#Disconnection%20block)     | Only sent by server. |
-|          | 0x02        | [Acknowledgement block](#Acknowledgement%20block) |                      |
-|          | 0x03        | [Linking block](#Linking%20block)                 |                      |
-|          | 0x04        | [Entity block](#Entity%20block)                   |                      |
+|          | 0x02        | [Synchronization block](#Synchronization%20block) |                      |
+|          | 0x03        | [Acknowledgement block](#Acknowledgement%20block) |                      |
+|          | 0x04        | [Linking block](#Linking%20block)                 |                      |
+|          | 0x05        | [Entity block](#Entity%20block)                   |                      |
 
 ## 1.1 - Packet type
-| Value | Sender        | Description                |
-| ----- | ------------- | -------------------------- |
-| 0x00  | Server/client | Connection packet.         |
-| 0x01  | Server/client | Disconnection packet.      |
-| 0x02  | Server/client | Acknowledgement packet.    |
-| 0x03  | Server        | Linking packet.            |
-| 0x04  | Server        | Entity packet.             |
+| Value | Sender        | Description             |
+| ----- | ------------- | ----------------------- |
+| 0x00  | Server/client | Connection packet.      |
+| 0x01  | Server/client | Disconnection packet.   |
+| 0x02  | Server/client | Synchronization packet. |
+| 0x03  | Server/client | Acknowledgement packet. |
+| 0x04  | Server        | Linking packet.         |
+| 0x05  | Server        | Entity packet.          |
+| 0x06  | Server/Client | Message packet.         |
 
 ## 1.2 - Packet flags
 Each bit represents different properties of the packet.
@@ -89,10 +96,10 @@ Each bit represents different properties of the packet.
 
 Block continues with one of the following blocks, depending on value of [Connection block type](#Connection%20block%20type).
 
-| Position | Connection block type | Type                                          |
-| -------- | --------------------- | --------------------------------------------- |
-| 4        | 0x01                  | [Accepting block](#Accepting%20block)         |
-|          | 0x02                  | [Rejection block](#Rejection%20block)         |
+| Position | Connection block type | Type                                                          |
+| -------- | --------------------- | ------------------------------------------------------------- |
+| 4        | 0x01                  | [Connection accepting block](#Connection%20accepting%20block) |
+| 4        | 0x02                  | [Connection rejection block](#Connection%20rejection%20block) |
 
 #### 1.3.1.1 - Connection block type
 Describes the type of connection block.
@@ -102,23 +109,21 @@ Describes the type of connection block.
 | 0x00  | client | Initialization. |
 | 0x01  | Server | Accepting.      |
 | 0x02  | Server | Rejection.      |
-| 0x03  | Client | Established.    |
 
-##### Initialization
+##### Connection initialization
 [Connection block](#Connection%20block) - [Sequence](#Sequence) is always 0.
 
-##### Established
-Reliable flag in [Packet flags](#[Packet%20flags]) is always 1.
-
-#### 1.3.1.2 - Accepting block
-Reliable flag in [Packet flags](#[Packet%20flags]) is always 0.  
+#### 1.3.1.2 - Connection accepting block
+Reliable flag in [Packet flags](#[Packet%20flags]) is always 1.  
 [Connection block](#Connection%20block) - [Sequence](#Sequence) is always 1.
 
-| Position | Type                    | Byte count | Data type | Description                                         |
-| -------- | ----------------------- | ---------- | --------- | --------------------------------------------------- |
-| 0        | [Timestamp](#Timestamp) | 8          | uint64    | Sender timestamp.                                   |
+| Position | Type                    | Byte count | Data type | Description                           |
+| -------- | ----------------------- | ---------- | --------- | ------------------------------------- |
+| 0        | [Timestamp](#Timestamp) | 8          | uint64    | Received timestamp.                   |
+| 8        | [Timestamp](#Timestamp) | 8          | uint64    | Sent timestamp.                       |
+| 16       |                         | 4          | uint32    | Sync packet interval in microseconds. |
 
-#### 1.3.1.3 - Rejection block
+#### 1.3.1.3 - Connection rejection block
 | Position | Byte count | Data type | Description          |
 | -------- | ---------- | --------- | -------------------- |
 | 0        | 1          | uchar     | Size of reason text. |
@@ -128,57 +133,94 @@ Reliable flag in [Packet flags](#[Packet%20flags]) is always 0.
 | Position | Byte count | Data type | Description          |
 | -------- | ---------- | --------- | -------------------- |
 | 0        | 1          | uchar     | Size of reason text. |
+
+Followed by following data, if the disconnection is sent from the server:
+
+| Position | Byte count | Data type | Description          |
+| -------- | ---------- | --------- | -------------------- |
 | 1        | max 255    | uchar []  | Reason text.         |
 
-### 1.3.3 - Acknowledgement block
+### 1.3.3 - Synchronization block
+| Position |Type                                                           | Byte count | Data type | Description                |
+| -------- |-------------------------------------------------------------- | ---------- | --------- | -------------------------- |
+| 0        | [Sequence](#Sequence)                                         | 2          | ushort    | Sequence number of packet. |
+| 2        | [Synchronization block type](#Synchronization%20block%20type) | 1          | uchar     | Type of connection block.  |
+| 3        | ...                                                           | ...        | ...       | ...                        |
+
+Block continues with the following block, depending on value of [Synchronization block type](#Synchronization%20block%20type).
+
+| Position | Connection block type | Type                                                          |
+| -------- | --------------------- | ------------------------------------------------------------- |
+| 3        | 0x01                  | [Synchronization acknowledgement block](#Synchronization%20acknowledgement%20block) |
+
+#### 1.3.3.1 - Synchronization block type
+Describes the type of synchronization block.
+
+| Value | Sender        | Description      |
+| ----- | ------------- | ---------------- |
+| 0x00  | Server        | Initialization. |
+| 0x01  | Server/Client | Ackowledgement.  |
+
+#### 1.3.3.2 - Synchronization acknowledgement block
+| Position |Type                             | Byte count | Data type | Description                   |
+| -------- |-------------------------------- | ---------- | --------- | ----------------------------- |
+| 0        | [Sequence](#Sequence)           | 2          | ushort    | Acknowledged packet sequence. |
+| 2        | [Timestamp](#Timestamp)         | 8          | uint64    | Sent timestamp.               |
+| 10       | [Timestamp](#Timestamp)         | 8          | uint64    | Received timestamp.           |
+
+### 1.3.4 - Acknowledgement block
 | Position | Type                  | Byte count | Data type | Description                                |
 | -------- | --------------------- | ---------- | --------- | ------------------------------------------ |
 | 0        | [Sequence](#Sequence) | 2          | ushort    | Sequence number of acknowledged packet.    |
 
-### 1.3.4 - Linking block
+### 1.3.5 - Linking block
 Reliable and Ordered flags in [Packet flags](#[Packet%20flags]) are always 1.
 
 | Position | Type                                          | Byte count | Data type | Description                |
 | -------- |---------------------------------------------- | ---------- | --------- | -------------------------- |
 | 0        | [Packet flags](#Packet%20flags)               | 1          | uchar     | Packet properties.         |
 | 1        | [Sequence](#Sequence)                         | 2          | ushort    | Sequence number of packet. |
-| 1        | [Linking block type](#Linking%20block%20type) | 2          | ushort    | Type of linking packet.    |
+| 3        | [Linking block type](#Linking%20block%20type) | 2          | ushort    | Type of linking packet.    |
+| 5        | ...                                           | ...        | ...       | ...                        |
 
-Followed by data below, if [Linking block type](#Linking%20block%20type) is 0x01.
+Block continues with one of the following blocks, depending on value of [Linking block type](#Linking%20block%20type).
 
-| Position | Byte count | Data type | Description             |
-| -------- | ---------- | --------- | ----------------------- |
-| 3        | 1          | uchar     | Variable linking count. |
-| 4        | 1          | uchar     | Entity linking count.   |
-| 5        | ...        | ...       | ...                     |
+| Position | Linking block type | Type                                                    |
+| -------- | ------------------ | ------------------------------------------------------- |
+| 5        | 0x01               | [Linking table block](#Linking%20table%20block)         |
+| 5        | 0x02               | [Linking accepting block](#Linking%20accepting%20block) |
 
-Followed by [Variable linking block](#Variable%20linking%20block), occuring **Variable linking count** times,
-and followed by [Entity linking block](#Entity%20linking%20block), occuring **Entity linking count** times.
-
-### 1.3.4.1 - Linking block type
+### 1.3.5.1 - Linking block type
 Describes the type of linking block.
 
-| Value | Sernder | Description |
-| ----- | ------- |------------ |
-| 0x00  | Client  | Request.    |
-| 0x01  | Server  | Answer.     |
-| 0x02  | Server  | Done.       |
+| Value | Sernder | Description     |
+| ----- | ------- |---------------- |
+| 0x00  | Client  | Initialization. |
+| 0x01  | Server  | Link table.     |
+| 0x02  | Client  | Accepting.      |
+| 0x03  | Client  | Rejection.      |
 
-#### 1.3.4.2 - Structure of linking block.
-- Header data
-- [Variable linking block](#Variable%20linking%20block)
-- [Entity linking block](#Entity%20linking%20block)
-  - [Entity variable linking block](#Entity%20variable%20linking%20block)
+Reliable flag in [Packet flags](#[Packet%20flags]) is always 1 for all linking block types.
 
-#### 1.3.4.3 - Variable linking block
-| Byte count | Type                                                | Data type | Description            |
-| ---------- | --------------------------------------------------- | --------- | ---------------------- |
-| 2          |                                                     | ushot     | Variable link ID.      |
-| 1          | [Linking variable type](#Linking%20variable%20type) | uchar     | Linking variable type. |
-| 1          |                                                     | uchar     | Variable name size.    |
-| max 255    |                                                     | uchar []  | Variable name.         |
+#### 1.3.5.2 - Linking table block
+| Position | Byte count | Data type | Description             |
+| -------- | ---------- | --------- | ----------------------- |
+| 3        | 1          | uchar     | Linking variable count. |
+| 4        | 1          | uchar     | Linking entity count.   |
+| 5        | ...        | ...       | ...                     |
 
-#### 1.3.4.4 - Entity linking block
+Followed by [Linking variable block](#Linking%20variable%20block), occuring **Linking variable count** times,
+and followed by [Linking entity block](#Linking%20entity%20block), occuring **Linking entity count** times.
+
+#### 1.3.5.3 - Linking variable block
+| Byte count | Type                                                            | Data type | Description                 |
+| ---------- | --------------------------------------------------------------- | --------- | --------------------------- |
+| 2          |                                                                 | ushot     | Variable link ID.           |
+| 1          | [Linking variable data type](#Linking%20variable%20data%20type) | uchar     | Linking variable data type. |
+| 1          |                                                                 | uchar     | Variable name size.         |
+| max 255    |                                                                 | uchar []  | Variable name.              |
+
+#### 1.3.5.4 - Linking Entity block
 | Byte count | Data type | Description                    |
 | ---------- | --------- | ------------------------------ |
 | 2          | ushort    | Entity link ID.                |
@@ -189,7 +231,7 @@ Describes the type of linking block.
 
 Followed by [Entity variable linking block](#Entity%20variable%20linking%20block), occuring **Entity variable linking count** times, for each [Entity linking block](#Entity%20linking%20block).
 
-#### 1.3.4.5 - Entity variable linking block
+#### 1.3.5.5 - Linking entity variable block
 | Byte count | Type                                                            | Data type | Description                |
 | ---------- | --------------------------------------------------------------- | --------- | -------------------------- |
 | 1          |                                                                 | uchar     | Entity variable link ID.   |
@@ -197,20 +239,20 @@ Followed by [Entity variable linking block](#Entity%20variable%20linking%20block
 | 1          |                                                                 | uchar     | Entity variable name size. |
 | max 255    |                                                                 | uchar []  | Entity variable name.      |
 
-#### 1.3.4.6 - Linking variable data type
-| Value | Description                | Type byte count |
-| ----- | -------------------------- | --------------- |
-| 0x00  | char.                      | 1               |
-| 0x01  | uchar.                     | 1               |
-| 0x02  | short.                     | 2               |
-| 0x03  | ushort.                    | 2               |
-| 0x04  | int.                       | 4               |
-| 0x05  | uint.                      | 4               |
-| 0x06  | int64.                     | 8               |
-| 0x07  | uint64.                    | 8               |
-| 0x08  | float.                     | 4               |
-| 0x09  | double.                    | 8               |
-| 0x0A  | char []                    | *               |
+#### 1.3.5.6 - Linking variable data type
+| Value | Description                | Byte count |
+| ----- | -------------------------- | ---------- |
+| 0x00  | char.                      | 1          |
+| 0x01  | uchar.                     | 1          |
+| 0x02  | short.                     | 2          |
+| 0x03  | ushort.                    | 2          |
+| 0x04  | int.                       | 4          |
+| 0x05  | uint.                      | 4          |
+| 0x06  | int64.                     | 8          |
+| 0x07  | uint64.                    | 8          |
+| 0x08  | float.                     | 4          |
+| 0x09  | double.                    | 8          |
+| 0x0A  | char []                    | *          |
 
 
 ### 1.3.6 - Entity block
@@ -221,7 +263,7 @@ Ordered flag in [Packet flags](#[Packet%20flags]) is always 0.
 | 0        | [Packet flags](#Packet%20flags) | 1          | uchar     | Packet properties.         |
 | 1        | [Sequence](#Sequence)           | 2          | ushort    | Sequence number of packet. |
 | 3        | [Timestamp](#Timestamp)         | 8          | uint64    | Sender timestamp.          |
-| 11       |                                 | 1          | uchar     | Entity link IDcount.         |
+| 11       |                                 | 1          | uchar     | Entity link IDcount.       |
 | 12       | ...                             | ...        | ...       | ...                        |
 
 Followed by [Entity link block](#Entity%20link%20block), occuring **Entity link count** times.
@@ -233,7 +275,7 @@ Followed by [Entity link block](#Entity%20link%20block), occuring **Entity link 
 | 2        | 1          | uchar     | Entity variable link ID count. |
 | 3        | ...        | ...       | ...                            |
 
-Followed by [Entity variable link block](#Entity%20link%20entity%20block), occuring **Entity count** times, for each [Entity link block](#Entity%20link%20block).
+Followed by [Entity variable link block](#Entity%20variable%20link%20entity%20block), occuring **Entity count** times, for each [Entity link block](#Entity%20link%20block).
 
 ### 1.3.6.2 - Entity variable link entity block
 | Position | Byte count | Data type | Description              |
@@ -283,7 +325,7 @@ Connections are established via handshaking.
 | ---------- | -------| --------------------------------------------------- | ----------- |
 | 1          | Client | 0x00                                                | 5           |
 | 2          | Server | 0x01                                                | 13          |
-| 3          | Client | 0x03                                                | 5           |
+| 3          | Client | (Acknowledgement of packet no. 2.)                  | 3           |
 
 ## 2.2 - Rejection
 Rejection(0x02) packet includes an optional reason text.
@@ -297,12 +339,17 @@ Rejection(0x02) packet includes an optional reason text.
 Disconnection packets can be sent by server or client at any time.  
 Packet sent by server includes an optional reason text.
 
-# 4 - Alive packet
-If the connection is lost, but no disconnect packet is sent, then it's important to send an "alive" or "ping" packet,  
-which is being acknowledged by the receiver. The connection is treated as lost when no new packets are received for any timeout, defined by respective implementation.  
-Alive packets are sent every other time from server and client. The server will always send the first one.
+# 4 - Acknowledgement
+All packets, flagged with the reliable flag, must be acknowledged by the receiver as soon as possible.
+Unacknowledged packets should be resent after any amount of time if they are marked as "reliable".
+Syncronization information should be used for determination of when the packets should be resent.
 
-# 5 - Linking
+# 5 - Synchronization
+Synchronization interval is determined by the server and shared with the clients in the acception packet at connection.
+A total of 3 packets are used for syncronization, initialized by the server. The client answers the initial packet with time information and the server answers back.
+
+# 6 - Linking
 Maps entity and variable names to readable names, as strings.
 Makes it possible for the client to verify incoming replication data.
 No replication to the client is done before the linking is requested and finished by the client.
+

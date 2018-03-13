@@ -28,7 +28,7 @@
 #include <core/SocketSelector.hpp>
 #include <core/UdpSocket.hpp>
 #include <core/Safe.hpp>
-#include <core/Semaphore.hpp>
+#include <core/PacketPool.hpp>
 #include <Peer.hpp>
 #include <map>
 #include <thread>
@@ -51,14 +51,17 @@ namespace Net
             */
             ServerImp();
 
-            std::atomic<bool>                   m_Hosted;                   ///< Is the server currently hosted?
-            std::atomic<bool>                   m_Stopping;                 ///< Is the server currently stopping?
-            std::map<unsigned short, Peer *>    m_PeerMap;                  ///< Map of all connected peers.
-            std::thread                         m_ReceiveThread;            ///< Thread for receiving packets.
-            SocketSelector                      m_SocketSelector;           ///< Socket selector for receive socket.
-            UdpSocket                           m_ReceiveSocket;            ///< Socket for receiving data.
-            std::mutex                          m_StartMutex;               ///< Mutex for starting server.
-            Semaphore                           m_ServerHostSempahore;      ///< Semaphore for waiting for all threads.
+            std::atomic<bool>                   m_Hosted;               ///< Is the server currently hosted?
+            std::atomic<bool>                   m_Stopping;             ///< Is the server currently stopping?
+            std::map<unsigned short, Peer *>    m_PeerMap;              ///< Map of all connected peers.
+            std::thread                         m_ReceiveThread;        ///< Thread for receiving packets.
+            std::thread                         m_ReliableThread;       ///< Thread for handling reliable packets.
+            std::thread                         m_ConnectionThread;     ///< Thread for handling incoming and established connections.
+            SocketSelector                      m_SocketSelector;       ///< Socket selector for receive socket.
+            UdpSocket                           m_ReceiveSocket;        ///< Socket for receiving data.
+            PacketPool                          m_PacketPool;           ///< Pool of packets;
+            const size_t                        m_MaxPacketSize;        ///< Maximum size of each packet.
+            std::mutex                          m_StopMutex;            ///< Mutex for starting server.
 
             REALNET_TEST_FRIEND                 ///< Allow private tests.
         };

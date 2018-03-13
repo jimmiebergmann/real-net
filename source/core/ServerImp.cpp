@@ -33,7 +33,9 @@ namespace Net
 
         ServerImp::ServerImp() :
             m_Hosted(false),
-            m_Stopping(false)
+            m_Stopping(false),
+            m_PacketPool(2048, 10),
+            m_MaxPacketSize(2048)
         {
         }
 

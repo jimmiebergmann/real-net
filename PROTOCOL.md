@@ -6,7 +6,7 @@ The sender of a packet will receive a disconnect notice if sending a packet of a
 
 Duplicates, already received sequence numbers, of packets are ignored, but acknowledged if reliable flag in [Packet flags](#Packet-flags) is 1.  
 
-Ordered packets are supported for linking, unlinking and message packets.  
+Ordered packets are supported for linking and message packets.  
 Linking and unlinking packets share the same order queue and message packets has its own queue.
 
 # Index

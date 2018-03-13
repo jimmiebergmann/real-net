@@ -25,7 +25,9 @@
 
 #include <Server.hpp>
 #include <core/Safe.hpp>
-
+#include <core/Semaphore.hpp>
+#include <core/Packet.hpp>
+#include <Clock.hpp>
 
 namespace Net
 {
@@ -41,7 +43,7 @@ namespace Net
 
     void Server::Host(const unsigned short port, Address::eType family)
     {
-        Core::SafeGuard sf(m_StartMutex);
+        Core::SafeGuard sf(m_StopMutex);
 
         if(m_Hosted == true)
         {
@@ -57,40 +59,87 @@ namespace Net
         m_ReceiveSocket.Open(port, family);
         m_SocketSelector.Start(&m_ReceiveSocket);
 
-        m_ReceiveThread = std::thread([this]()
+        // Receive thead
+        Core::Semaphore receiveThreadStarted;
+        m_ReceiveThread = std::thread([this, &receiveThreadStarted]()
         {
-            const size_t bufferSize = 1024;
-            unsigned char buffer[bufferSize];
             SocketAddress socketAddress;
+            Core::PacketPool::Packet * pPacket = m_PacketPool.Get();
 
-            m_ServerHostSempahore.NotifyOne();
+            receiveThreadStarted.NotifyOne();
 
             while(m_Stopping == false)
             {
-
                 if(m_SocketSelector.Select(Milliseconds(500ULL)) == false)
                 {
                     continue;
                 }
 
-                int receiveSize = m_ReceiveSocket.Receive(buffer, bufferSize, socketAddress);
-                if(receiveSize < 0)
+                int receiveSize = m_ReceiveSocket.Receive(pPacket->GetData(), m_MaxPacketSize, socketAddress);
+                if(receiveSize == 0)
                 {
                     continue;
                 }
 
+                pPacket->SetReceiveTime(Clock::GetSystemTime());
+
+                if(receiveSize < 0)
+                {
+                    throw Exception("Receive thread: Error while receiving data: " + std::to_string(Core::GetLastSystemError()));
+                    break;
+                }
+
+                const size_t packetType = static_cast<size_t>(pPacket->GetData()[0]);
+                if(packetType >= Core::Packet::TypeCount)
+                {
+                    continue;
+                }
+
+                switch(packetType)
+                {
+                    case Core::Packet::ConnectionType:
+                        break;
+                    case Core::Packet::DisconnectionType:
+                        break;
+                    case Core::Packet::SynchronizationType:
+                        break;
+                    case Core::Packet::AcknowledgementType:
+                        break;
+                    default:
+                        break;
+                };
+
             }
         });
 
+        // Reliable thread.
+        Core::Semaphore reliableThreadStarted;
+        m_ReliableThread = std::thread([this, &reliableThreadStarted]()
+        {
+            reliableThreadStarted.NotifyOne();
+
+        });
+
+        // Reliable thread.
+        Core::Semaphore connectionThreadStarted;
+        m_ConnectionThread = std::thread([this, &connectionThreadStarted]()
+        {
+            connectionThreadStarted.NotifyOne();
+
+        });
+
+
         // Wait for all threads to start running.
-        m_ServerHostSempahore.Wait();
+        receiveThreadStarted.Wait();
+        reliableThreadStarted.Wait();
+        connectionThreadStarted.Wait();
 
         m_Hosted = true;
     }
 
     void Server::Stop()
     {
-        Core::SafeGuard sf(m_StartMutex);
+        Core::SafeGuard sf(m_StopMutex);
 
         if(m_Hosted == false)
         {
@@ -99,8 +148,16 @@ namespace Net
 
         m_Hosted = false;
         m_Stopping = true;
+
+
         m_SocketSelector.Stop();
         m_ReceiveThread.join();
+
+        m_ReliableThread.join();
+
+        m_ConnectionThread.join();
+
+
         m_ReceiveSocket.Close();
         m_Stopping = false;
     }

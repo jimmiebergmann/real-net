@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
+#include <list>
 
 #define REALNET_TEST
 
@@ -17,6 +18,7 @@
 #include <core/UdpSocket.hpp>
 #include <core/SocketSelector.hpp>
 #include <core/Md5.hpp>
+#include <core/PacketPool.hpp>
 
 
 #define GTEST_PRINT "\033[0;32m" << "[          ] " << "\033[0;0m"
@@ -136,6 +138,50 @@ namespace Net
                std::this_thread::sleep_for(std::chrono::microseconds(100));
                EXPECT_TRUE(clock.GetLapsedTime() >= lastTime);
                lastTime = clock.GetLapsedTime();
+            }
+        }
+    }
+
+    TEST(PacketPool, tests)
+    {
+        {
+            Net::Core::PacketPool pool(2048, 1000);
+
+            EXPECT_EQ(pool.GetPoolSize(),           1000);
+            EXPECT_EQ(pool.DecreasePoolSize(50),     950);
+            EXPECT_EQ(pool.DecreasePoolSize(50),     900);
+            EXPECT_EQ(pool.GetPoolSize(),           900);
+            EXPECT_EQ(pool.IncreasePoolSize(50),     950);
+            EXPECT_EQ(pool.IncreasePoolSize(50),     1000);
+            EXPECT_EQ(pool.GetPoolSize(),           1000);
+
+            EXPECT_EQ(pool.DecreasePoolSize(2000),   0);
+            EXPECT_EQ(pool.GetPoolSize(),           0);
+
+            EXPECT_EQ(pool.IncreasePoolSize(1000),   1000);
+            EXPECT_EQ(pool.GetPoolSize(),           1000);
+        }
+        {
+            Net::Core::PacketPool pool(2048, 1000);
+
+            std::list<Net::Core::PacketPool::Packet *> packets;
+
+            for(size_t i = 0; i < 1000; i++)
+            {
+                Net::Core::PacketPool::Packet * pPacket = pool.Get();
+                EXPECT_NE(pPacket, nullptr);
+                packets.push_back(pPacket);
+            }
+            for(auto it = packets.begin(); it != packets.end(); it++)
+            {
+                EXPECT_NO_THROW(pool.Return(*it));
+            }
+        }
+        {
+            Net::Core::PacketPool pool(2048, 1000);
+            for(size_t i = 0; i < 2000; i++)
+            {
+                EXPECT_NE(pool.Get(), nullptr);
             }
         }
     }

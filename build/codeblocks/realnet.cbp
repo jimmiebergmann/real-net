@@ -68,6 +68,7 @@
 		<Unit filename="../../include/core/EntityManagerImp.hpp" />
 		<Unit filename="../../include/core/Md5.hpp" />
 		<Unit filename="../../include/core/Packet.hpp" />
+		<Unit filename="../../include/core/PacketPool.hpp" />
 		<Unit filename="../../include/core/Safe.hpp" />
 		<Unit filename="../../include/core/Semaphore.hpp" />
 		<Unit filename="../../include/core/ServerImp.hpp" />
@@ -98,6 +99,7 @@
 		<Unit filename="../../source/core/EntityManagerImp.cpp" />
 		<Unit filename="../../source/core/Md5.cpp" />
 		<Unit filename="../../source/core/Packet.cpp" />
+		<Unit filename="../../source/core/PacketPool.cpp" />
 		<Unit filename="../../source/core/Semaphore.cpp" />
 		<Unit filename="../../source/core/ServerImp.cpp" />
 		<Unit filename="../../source/core/SocketSelector.cpp" />

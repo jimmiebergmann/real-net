@@ -25,9 +25,9 @@
 
 #include <Server.hpp>
 #include <core/Safe.hpp>
-#include <core/Semaphore.hpp>
 #include <core/Packet.hpp>
 #include <Clock.hpp>
+#include <iostream>
 
 namespace Net
 {
@@ -63,25 +63,22 @@ namespace Net
         Core::Semaphore receiveThreadStarted;
         m_ReceiveThread = std::thread([this, &receiveThreadStarted]()
         {
-            SocketAddress socketAddress;
-            Core::PacketPool::Packet * pPacket = m_PacketPool.Get();
+            Core::Packet * pPacket = m_PacketPool.Get();
 
             receiveThreadStarted.NotifyOne();
 
             while(m_Stopping == false)
             {
-                if(m_SocketSelector.Select(Milliseconds(500ULL)) == false)
+                if(m_SocketSelector.Select(Microseconds(500000ULL)) == false)
                 {
                     continue;
                 }
 
-                int receiveSize = m_ReceiveSocket.Receive(pPacket->GetData(), m_MaxPacketSize, socketAddress);
+                int receiveSize = m_ReceiveSocket.Receive(pPacket->Data, Core::Packet::MaxPacketSize, pPacket->Address);
                 if(receiveSize == 0)
                 {
                     continue;
                 }
-
-                pPacket->SetReceiveTime(Clock::GetSystemTime());
 
                 if(receiveSize < 0)
                 {
@@ -89,17 +86,22 @@ namespace Net
                     break;
                 }
 
-                const size_t packetType = static_cast<size_t>(pPacket->GetData()[0]);
+                const unsigned char packetType = pPacket->Data[0];
                 if(packetType >= Core::Packet::TypeCount)
                 {
                     continue;
                 }
 
+                pPacket->ReceiveTime = Clock::GetSystemTime();
+                pPacket->Size = static_cast<size_t>(receiveSize);
+
                 switch(packetType)
                 {
                     case Core::Packet::ConnectionType:
+                        QueueConnectionPacket(pPacket);
                         break;
                     case Core::Packet::DisconnectionType:
+                        QueueConnectionPacket(pPacket);
                         break;
                     case Core::Packet::SynchronizationType:
                         break;
@@ -108,6 +110,8 @@ namespace Net
                     default:
                         break;
                 };
+
+                pPacket = m_PacketPool.Get();
 
             }
         });
@@ -126,6 +130,68 @@ namespace Net
         {
             connectionThreadStarted.NotifyOne();
 
+            Time waitTime = Time::Infinite;
+
+            while(m_Stopping == false)
+            {
+                m_ConnectionPacketSemaphore.WaitFor(waitTime);
+
+                if(m_Stopping)
+                {
+                    return;
+                }
+
+                // Handle connection packets
+                Core::Packet * pPacket = nullptr;
+                {
+                    Core::SafeGuard sf(m_ConnectionPacketQueue);
+                    if(m_ConnectionPacketQueue.Value.size())
+                    {
+                        pPacket = m_ConnectionPacketQueue.Value.front();
+                        m_ConnectionPacketQueue.Value.pop();
+                    }
+
+                }
+
+                if(pPacket != nullptr)
+                {
+                    switch(pPacket->Data[0])
+                    {
+                        case Core::Packet::ConnectionType:
+                        {
+                            if(pPacket->Size != 4 || pPacket->Data[1] != Core::Packet::ConnectionTypeInit)
+                            {
+                                break;
+                            }
+
+                            const unsigned short sequence = pPacket->SerializeSequenceNumber();
+                            if(sequence != 0)
+                            {
+                                break;
+                            }
+
+
+                            std::cout << "Received " << pPacket->Size << " bytes - connection packet - from ";
+                            std::cout << pPacket->Address.Ip.GetAsString() << ":" << pPacket->Address.Port << std::endl;
+
+
+                        }
+                        break;
+                        case Core::Packet::DisconnectionType:
+                        {
+
+                        }
+                        break;
+                        default:
+                            break;
+                    };
+                }
+
+
+                // Handle connection timeouts.
+                // ...
+
+            }
         });
 
 
@@ -155,6 +221,7 @@ namespace Net
 
         m_ReliableThread.join();
 
+        m_ConnectionPacketSemaphore.NotifyOne();
         m_ConnectionThread.join();
 
 

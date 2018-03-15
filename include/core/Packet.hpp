@@ -25,8 +25,8 @@
 
 #pragma once
 
-#include <core/Build.hpp>
-
+#include <Time.hpp>
+#include <Address.hpp>
 
 namespace Net
 {
@@ -34,54 +34,78 @@ namespace Net
     namespace Core
     {
 
-        namespace Packet
+        struct Packet
         {
 
-            /**
-            * @breif Enumerator of all packet types.
-            *
-            */
-            enum eType
-            {
-                ConnectionType          = 0,
-                DisconnectionType       = 1,
-                SynchronizationType     = 2,
-                AcknowledgementType     = 3,
-                LinkingType             = 4,
-                ReplicationType         = 5,
-                MessageType             = 6
-            };
-            const size_t TypeCount      = 7;  ///< Total number of packet types.
+            static const size_t MaxPacketSize                   = 2048; ///< Maximum size of each packet, in bytes.
 
             /**
-            * @breif Enumerator of different connection packet types.
+            * @breif Packet types.
             *
             */
-            enum eConnectionType
-            {
-                ConnectionTypeInit              = 0,
-                ConnectionTypeAccept            = 1,
-                ConnectionTypeReject            = 2
-            };
-            const size_t ConnectionTypeCount    = 3;        ///< Total number of connection packet types.
-
-            const size_t ConnectionInitPacketSize   = 4;    ///< Total number of bytes in init packet.
-            const size_t ConnectionAcceptPacketSize = 24;   ///< Total number of bytes in accept packet.
-            const size_t ConnectionRejectPacketSize = 5;    ///< Total number of bytes in reject packet. Excluding reason size.
+            static const unsigned char ConnectionType           = 0x00;
+            static const unsigned char DisconnectionType        = 0x01;
+            static const unsigned char SynchronizationType      = 0x02;
+            static const unsigned char AcknowledgementType      = 0x03;
+            static const unsigned char LinkingType              = 0x04;
+            static const unsigned char ReplicationType          = 0x05;
+            static const unsigned char MessageType              = 0x06;
+            static const unsigned char TypeCount                = 0x07;  ///< Total number of packet types.
 
             /**
-            * @breif Enumerator of different synchronization packet types.
+            * @breif Connection packet types.
             *
             */
-            enum eSynchronizationType
-            {
-                SynchronizationTypeInit             = 0,
-                SynchronizationTypeAck              = 1,
-            };
-            const size_t SynchronizationTypeCount   = 2;  ///< Total number of connection packet types.
+            static const unsigned char ConnectionTypeInit       = 0x00;
+            static const unsigned char ConnectionTypeAccept     = 0x01;
+            static const unsigned char ConnectionTypeReject     = 0x02;
+            static const unsigned char ConnectionTypeCount      = 0x03; ///< Total number of connection packet types.
+
+            /**
+            * @breif Synchronization packet types.
+            *
+            */
+            static const unsigned char SynchronizationTypeInit  = 0x00;
+            static const unsigned char SynchronizationTypeAck   = 0x01;
+            static const unsigned char SynchronizationTypeCount = 0x02;  ///< Total number of connection packet types.
 
 
-        }
+            // The follow declarations are non-static members of the packet structure.
+
+            /**
+            * @breif Constructor.
+            *
+            */
+            Packet();
+
+            /**
+            * @breif Destructor.
+            *
+            */
+            ~Packet();
+
+            /**
+            * @breif Serialize sequence number from packet data.
+            *        The internal sequence number wont be set.
+            *
+            */
+            unsigned short SerializeSequenceNumber() const;
+
+            unsigned char * Data;           ///< Packet data.
+            size_t          Size;           ///< Size of packet. Not the number of allocated bytes.
+            unsigned short  Sequence;       ///< Sequence number of packet.
+            Time            ReceiveTime;    ///< Time of when the packet were received.
+            SocketAddress   Address;        ///< Socket address of packet.
+
+        private:
+
+            /**
+            * @breif Copy constructor. Not definied and not allowed.
+            *
+            */
+            Packet(const Packet & packet);
+
+        };
 
     }
 

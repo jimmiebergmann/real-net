@@ -24,6 +24,7 @@
 */
 
 #include <Server.hpp>
+#include <core/Packet.hpp>
 
 namespace Net
 {
@@ -34,9 +35,16 @@ namespace Net
         ServerImp::ServerImp() :
             m_Hosted(false),
             m_Stopping(false),
-            m_PacketPool(2048, 10),
-            m_MaxPacketSize(2048)
+            m_PacketPool(10)
         {
+        }
+
+        void ServerImp::QueueConnectionPacket(Packet * packet)
+        {
+            Core::SafeGuard sf(m_ConnectionPacketQueue);
+
+            m_ConnectionPacketQueue.Value.push(packet);
+            m_ConnectionPacketSemaphore.NotifyOne();
         }
 
     }

@@ -176,54 +176,20 @@ namespace Net
     * @breif Socket address combines an address and a port.
     *
     */
-    class SocketAddress
+    struct SocketAddress
     {
-
-    public:
-
-        /**
-        * @breif Socket address pair, containing address and port.
-        *
-        */
-        typedef std::pair<Address, unsigned short> Pair;
 
         /**
         * @breif Constructor.
         *
-        * @param address Address to copy, to socket address.
-        * @param port Port to copy, to socket address.
+        * @param address Ip address.
+        * @param port Port number.
         *
         */
         SocketAddress(const Address & address = Address::Zero, const unsigned short port = 0);
 
-        /**
-        * @breif Get IP of socket address.
-        *
-        */
-        const Address & GetIp() const;
-
-        /**
-        * @breif Set IP of socket address.
-        *
-        */
-        void SetIp(const Address & address);
-
-        /**
-        * @breif Get port of socket address.
-        *
-        */
-        unsigned short GetPort() const;
-
-        /**
-        * @breif Set port of socket address.
-        *
-        */
-        void SetPort(unsigned short port);
-
-    private:
-
-        Address         m_Address;  ///< Socket address.
-        unsigned short  m_Port;     ///< Socket port.
+        Address         Ip;     ///< Socket address.
+        unsigned short  Port;   ///< Socket port.
 
     };
 

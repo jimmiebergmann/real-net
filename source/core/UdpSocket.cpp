@@ -87,7 +87,7 @@ namespace Net
                 }
 
                 m_Family = Address::Ipv6;
-                m_SocketAddress.SetIp(Address::Loopback(m_Family));
+
             }
             // Ipv4
             else
@@ -106,10 +106,10 @@ namespace Net
                 }
 
                 m_Family = Address::Ipv6;
-                m_SocketAddress.SetIp(Address::Loopback(m_Family));
             }
 
-            m_SocketAddress.SetPort(port);
+            m_SocketAddress.Ip = Address::Loopback(m_Family);
+            m_SocketAddress.Port = port;
         }
 
         void UdpSocket::Close()
@@ -124,17 +124,15 @@ namespace Net
 
         int UdpSocket::Send(const void * data, const size_t size, const SocketAddress & socketAddress)
         {
-            const Address & address = socketAddress.GetIp();
-            const unsigned short port = socketAddress.GetPort();
             int result = 0;
 
-            if(address.GetType() == Net::Address::Ipv4)
+            if(socketAddress.Ip.GetType() == Net::Address::Ipv4)
             {
                 sockaddr_in outAddr;
                 memset (&outAddr, 0, sizeof(outAddr));
                 outAddr.sin_family = AF_INET;
-                outAddr.sin_port = htons(port);
-                const unsigned char * pBytes = address.GetBytes();
+                outAddr.sin_port = htons(socketAddress.Port);
+                const unsigned char * pBytes = socketAddress.Ip.GetBytes();
                 const unsigned int ipv4 = (static_cast<unsigned int>(pBytes[0]) << 24) |
                                           (static_cast<unsigned int>(pBytes[1]) << 16) |
                                           (static_cast<unsigned int>(pBytes[2]) << 8)  |
@@ -143,13 +141,13 @@ namespace Net
 
                 result = sendto(m_Handle, data, size, 0, (struct sockaddr*)&outAddr, sizeof(outAddr));
             }
-            else if(address.GetType() == Net::Address::Ipv6)
+            else if(socketAddress.Ip.GetType() == Net::Address::Ipv6)
             {
                 struct sockaddr_in6 outAddr;
                 memset (&outAddr, 0, sizeof(outAddr));
                 outAddr.sin6_family = AF_INET6;
-                outAddr.sin6_port = htons(port);
-                memcpy(outAddr.sin6_addr.s6_addr, address.GetBytes(), 16);
+                outAddr.sin6_port = htons(socketAddress.Port);
+                memcpy(outAddr.sin6_addr.s6_addr, socketAddress.Ip.GetBytes(), 16);
 
                 result = sendto(m_Handle, data, size, 0, (struct sockaddr*)&outAddr, sizeof(outAddr));
             }
@@ -175,21 +173,19 @@ namespace Net
                     struct sockaddr_in * pIp = (struct sockaddr_in*)&from;
                     const unsigned int ipv4 = ntohl(static_cast<unsigned int>(pIp->sin_addr.s_addr));
 
-                    Address address(static_cast<unsigned char>(ipv4 >> 24),
-                                    static_cast<unsigned char>(ipv4 >> 16),
-                                    static_cast<unsigned char>(ipv4 >> 8),
-                                    static_cast<unsigned char>(ipv4));
-                    socketAddress.SetIp(address);
-                    socketAddress.SetPort(ntohs(pIp->sin_port));
+                    socketAddress.Ip = Address( static_cast<unsigned char>(ipv4 >> 24),
+                                                static_cast<unsigned char>(ipv4 >> 16),
+                                                static_cast<unsigned char>(ipv4 >> 8),
+                                                static_cast<unsigned char>(ipv4));
+                    socketAddress.Port = ntohs(pIp->sin_port);
                 }
                 break;
                 case AF_INET6:
                 {
                     struct sockaddr_in6 * pIp = (struct sockaddr_in6*)&from;
                     const unsigned char * ipv6 = static_cast<unsigned char *>(pIp->sin6_addr.s6_addr);
-                    Address address(ipv6);
-                    socketAddress.SetIp(address);
-                    socketAddress.SetPort(ntohs(pIp->sin6_port));
+                    socketAddress.Ip = Address(ipv6);
+                    socketAddress.Port = ntohs(pIp->sin6_port);
                 }
                 break;
                 default:

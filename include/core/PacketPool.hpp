@@ -25,9 +25,9 @@
 
 #pragma once
 
-#include <Time.hpp>
+#include <core/Packet.hpp>
+#include <core/Safe.hpp>
 #include <set>
-#include <mutex>
 
 namespace Net
 {
@@ -45,77 +45,73 @@ namespace Net
         public:
 
             /**
-            * @breif Packet class, containing packet data, allocated by the pool.
+            * @breif Constructor.
+            *
+            * @param poolSize Number of pre-allocated packets in pool.
             *
             */
-            class Packet
-            {
+            PacketPool(const size_t poolSize);
 
-            public:
-
-                friend class PacketPool;
-
-                void SetReceiveTime(const Time & time);
-
-                void SetSequence(const unsigned short sequence);
-
-                void SizeSize(const size_t packetSize);
-
-                unsigned char * GetData();
-
-                size_t GetSize() const;
-
-                unsigned short GetSequence() const;
-
-                const Time & GetReceiveTime() const;
-
-            private:
-
-                Packet(const Packet & packet);
-
-                Packet(const size_t dataSize);
-
-                ~Packet();
-
-                unsigned char * m_pData;
-                size_t          m_PacketSize;
-                unsigned short  m_Sequence;
-                Time            m_ReceiveTime;
-            };
-
-            PacketPool( const size_t packetSize,
-                        const size_t poolSize);
-
+            /**
+            * @breif Destructor.
+            *
+            */
             ~PacketPool();
 
+            /**
+            * @breif Increment number of pre-allocated packets.
+            *
+            */
             size_t IncreasePoolSize(const size_t count);
 
+            /**
+            * @breif Decrease number of pre-allocated packets.
+            *        Data is deallocated at packet return if needed.
+            *
+            */
             size_t DecreasePoolSize(const size_t count);
 
-            size_t GetPacketSize() const;
-
+            /**
+            * @breif Get number of pre-allocated packets.
+            *
+            */
             size_t GetPoolSize();
 
+            /**
+            * @breif Get free packet count.
+            *
+            */
+            size_t GetFreeCount();
+
+            /**
+            * @breif Get total packet count in pool.
+            *
+            */
+            size_t GetTotalCount();
+
+            /**
+            * @breif Get packet from pool.
+            *
+            */
             Packet * Get();
 
+            /**
+            * @breif Return packet to pool.
+            *
+            * @throw Exception          If packet is returned to wrong pool or
+            *                           if packet already is free.
+            *
+            */
             void Return(Packet * packet);
 
         private:
 
+            /**
+            * @breif Copy constructor. Not defined and allowed.
+            *
+            */
             PacketPool(const PacketPool & packetPool);
 
-            inline Packet * AddPacket(const bool isFree = true)
-            {
-                Packet * pPacket = new Packet(m_PacketSize);
-                m_AllPackets.insert(pPacket);
-                if(isFree)
-                {
-                    m_FreePackets.insert(pPacket);
-                }
-                return pPacket;
-            }
-
-            const size_t            m_PacketSize;       ///< Size of each packet.
             size_t                  m_PoolSize;         ///< Number of packets, pre-allocated in pool.
             std::set<Packet *>      m_AllPackets;        ///< Set of alla packets.
             std::set<Packet *>      m_FreePackets;      ///< Set of alla packets.

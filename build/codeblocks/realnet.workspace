@@ -3,5 +3,6 @@
 	<Workspace title="workspace">
 		<Project filename="realnet.cbp" />
 		<Project filename="test.cbp" />
+		<Project filename="examples.cbp" />
 	</Workspace>
 </CodeBlocks_workspace_file>

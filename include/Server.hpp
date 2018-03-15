@@ -71,10 +71,26 @@ namespace Net
         */
         void Stop();
 
-        // Virtual functions
+    private:
+
+        /**
+        * @breif Trigger function called before connection with peer is established.
+        *        Overload and return true to accept peer. Return false to reject.
+        *
+        */
         virtual bool OnPeerPreConnect(Peer & peer);
+
+        /**
+        * @breif Trigger function called when connection with new peer has been established.
+        *
+        */
         virtual void OnPeerConnect(Peer & peer);
+
+        /**
+        * @breif Trigger function called if peer disconnects.
+        */
         virtual void OnPeerDisconnect(Peer & peer);
+
 
         REALNET_TEST_FRIEND ///< Allow private tests.
 

@@ -289,29 +289,9 @@ namespace Net
 
     // Socket address class.
     SocketAddress::SocketAddress(const Address & address, const unsigned short port) :
-        m_Address(address),
-        m_Port(port)
+        Ip(address),
+        Port(port)
     {
-    }
-
-    const Address & SocketAddress::GetIp() const
-    {
-        return m_Address;
-    }
-
-    void SocketAddress::SetIp(const Address & address)
-    {
-        m_Address = address;
-    }
-
-    unsigned short SocketAddress::GetPort() const
-    {
-        return m_Port;
-    }
-
-    void SocketAddress::SetPort(unsigned short port)
-    {
-        m_Port = port;
     }
 
 }

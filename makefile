@@ -38,9 +38,12 @@ test_release_folders: folders
 	mkdir -p $(OBJ_FOLDER)/release/test
 test_debug_folders: folders
 	mkdir -p $(OBJ_FOLDER)/debug/test
+examples_release_folders:
+	mkdir -p $(OBJ_FOLDER)/release/examples
+examples_debug_folders:
+	mkdir -p $(OBJ_FOLDER)/debug/examples
 
-
-.PHONY: clean clean_all clean_release clean_debug
+.PHONY: clean clean_all clean_release clean_debug clean_test clean_test_release clean_test_debug
 clean_all:
 	rm -r -f $(OBJ_FOLDER)
 	rm -r -f $(LIB_FOLDER)
@@ -58,7 +61,14 @@ clean_test_release: clean_release
 clean_test_debug: clean_debug
 	rm -r -f $(OBJ_FOLDER)/debug/test
 
+clean_examples: clean_examples_release clean_examples_debug
+clean_examples_release: clean_release
+	rm -r -f $(OBJ_FOLDER)/release/examples
+clean_examples_debug: clean_debug
+	rm -r -f $(OBJ_FOLDER)/debug/examples
 
+
+# Test build
 $(OBJ_FOLDER)/release/test/test.o: test/test.cpp
 	$(CXX) -std=c++11 -Wall -pedantic -Itest/googletest/googletest/include -Iinclude -c $< -o $@
 
@@ -73,4 +83,20 @@ test_debug: debug test_debug_folders $(OBJ_FOLDER)/debug/test/test.o
 	$(CXX) -g -o $(BIN_FOLDER)/test-d $(OBJ_FOLDER)/debug/test/test.o test/googletest/googletest/make/gtest_main.a lib/realnet-d.a -lpthread
 
 test: test_release test_debug
+
+# Examples build.
+$(OBJ_FOLDER)/release/examples/ConnectionExample.o: examples/ConnectionExample.cpp
+	$(CXX) -std=c++11 -Wall -pedantic -Iinclude -c $< -o $@
+
+$(OBJ_FOLDER)/debug/examples/ConnectionExample.o: examples/ConnectionExample.cpp
+	$(CXX) -std=c++11 -Wall -pedantic -g -Iinclude -c $< -o $@
+
+
+connection_example_release: release examples_release_folders $(OBJ_FOLDER)/release/examples/ConnectionExample.o
+	$(CXX) -o $(BIN_FOLDER)/connection-example $(OBJ_FOLDER)/release/examples/ConnectionExample.o -s lib/realnet.a -lpthread
+
+connection_example_debug: debug examples_debug_folders $(OBJ_FOLDER)/debug/examples/ConnectionExample.o
+	$(CXX) -g -o $(BIN_FOLDER)/connection-example-d $(OBJ_FOLDER)/debug/examples/ConnectionExample.o lib/realnet-d.a -lpthread
+
+examples: connection_example_release connection_example_debug
 

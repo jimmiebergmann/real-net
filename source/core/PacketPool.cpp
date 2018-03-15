@@ -24,7 +24,6 @@
 */
 
 #include <core/PacketPool.hpp>
-#include <core/Safe.hpp>
 #include <Exception.hpp>
 
 namespace Net
@@ -33,68 +32,15 @@ namespace Net
     namespace Core
     {
 
-        /// Packet class.
-        void PacketPool::Packet::SetReceiveTime(const Time & time)
-        {
-            m_ReceiveTime = time;
-        }
-
-        void PacketPool::Packet::SetSequence(const unsigned short sequence)
-        {
-            m_Sequence = sequence;
-        }
-
-        void PacketPool::Packet::SizeSize(const size_t packetSize)
-        {
-            m_PacketSize = packetSize;
-        }
-
-        unsigned char * PacketPool::Packet::GetData()
-        {
-            return m_pData;
-        }
-
-        size_t PacketPool::Packet::GetSize() const
-        {
-            return m_PacketSize;
-        }
-
-        unsigned short PacketPool::Packet::GetSequence() const
-        {
-            return m_Sequence;
-        }
-
-        const Time & PacketPool::Packet::GetReceiveTime() const
-        {
-            return m_ReceiveTime;
-        }
-
-        PacketPool::Packet::Packet(const Packet & packet)
-        {
-        }
-
-        PacketPool::Packet::Packet(const size_t dataSize) :
-            m_pData(new unsigned char[dataSize]),
-            m_PacketSize(0),
-            m_Sequence(0)
-        {
-        }
-
-        PacketPool::Packet::~Packet()
-        {
-            delete [] m_pData;
-        }
-
-
         // Packet pool class.
-        PacketPool::PacketPool( const size_t packetSize,
-                                const size_t poolSize) :
-            m_PacketSize(packetSize),
+        PacketPool::PacketPool(const size_t poolSize) :
             m_PoolSize(poolSize)
         {
             for(size_t i = 0; i < m_PoolSize; i++)
             {
-                AddPacket();
+                Packet * pPacket = new Packet();
+                m_AllPackets.insert(pPacket);
+                m_FreePackets.insert(pPacket);
             }
         }
 
@@ -116,7 +62,9 @@ namespace Net
             m_PoolSize += count;
             for(size_t i = 0; i < count; i++)
             {
-                AddPacket();
+                Packet * pPacket = new Packet();
+                m_AllPackets.insert(pPacket);
+                m_FreePackets.insert(pPacket);
             }
 
             return m_PoolSize;
@@ -138,25 +86,33 @@ namespace Net
             return m_PoolSize;
         }
 
-        size_t PacketPool::GetPacketSize() const
-        {
-            return m_PacketSize;
-        }
-
         size_t PacketPool::GetPoolSize()
         {
             Core::SafeGuard sf(m_Mutex);
             return m_PoolSize;
         }
 
-        PacketPool::Packet * PacketPool::Get()
+        size_t PacketPool::GetFreeCount()
+        {
+            Core::SafeGuard sf(m_Mutex);
+            return m_FreePackets.size();
+        }
+
+        size_t PacketPool::GetTotalCount()
+        {
+            Core::SafeGuard sf(m_Mutex);
+            return m_AllPackets.size();
+        }
+
+        Packet * PacketPool::Get()
         {
             Core::SafeGuard sf(m_Mutex);
 
             Packet * pPacket = nullptr;
             if(m_FreePackets.size() == 0)
             {
-                pPacket = AddPacket(false);
+                pPacket = new Packet();
+                m_AllPackets.insert(pPacket);
             }
             else
             {
@@ -180,7 +136,7 @@ namespace Net
             auto itAll = m_AllPackets.find(packet);
             if(itAll == m_AllPackets.end())
             {
-                throw Exception("Returning packet to wrong pool.");
+                throw Exception("Returned packet to wrong pool.");
             }
 
             auto itFree = m_FreePackets.find(packet);
@@ -189,7 +145,8 @@ namespace Net
                 throw Exception("Packet is already returned to pool.");
             }
 
-
+            /// Future: Store the packet for a while if it could be in use later.
+            ///         Maybe the system is receiving a lot of packets for the moment?
             if(m_AllPackets.size() > m_PoolSize)
             {
                 m_AllPackets.erase(itAll);

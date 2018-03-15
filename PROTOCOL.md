@@ -6,8 +6,7 @@ The sender of a packet will receive a disconnect notice if sending a packet of a
 
 Duplicates, already received sequence numbers, of packets are ignored, but acknowledged if reliable flag in [Packet flags](#Packet-flags) is 1.  
 
-Ordered packets are supported for linking and message packets.  
-Linking and unlinking packets share the same order queue and message packets has its own queue.
+Ordered packets are supported for message packets, but always used for linking packets.
 
 # Index
 - 1 - [Packet block ](1---Packet-block)
@@ -30,10 +29,11 @@ Linking and unlinking packets share the same order queue and message packets has
       - 1.3.5.4 - [Linking Entity block](1.3.5.4---Linking-Entity-block)
       - 1.3.5.5 - [Linking entity variable block](1.3.5.5---Linking-entity-variable-block)
       - 1.3.5.6 - [Linking variable data block](1.3.5.6---Linking-variable-data-block)
-    - 1.3.6 - [Entity block](1.3.6---Entity-block)
-      - 1.3.6.1 - [Entity link block](1.3.6.1---Entity-link-block)
-      - 1.3.6.2 - [Entity variable link entity block](1.3.6.2---Entity-variable-link-entity-block)
-      - 1.3.6.3 - [Entity variable block](1.3.6.3---Entity-variable-block)
+    - 1.3.6 - [Replication block](1.3.6---Replication-block)
+      - 1.3.6.1 - [Replication entity block](1.3.6.1---Replication-block)
+      - 1.3.6.2 - [Replication entity variable block](1.3.6.2---Replication-entity-variable-block)
+      - 1.3.6.3 - [Replication entity variable data block](1.3.6.3---Replication-entity-variable-data-block)
+      - 1.3.6.4 - [Replication variable block](1.3.6.3---Replication-variable-block)
     - 1.3.7 - [Message block](1.3.7---Message-block)
   - 1.4 - [Sequence](1.4---Sequence)
   - 1.5 - [Timestamp](1.5---Timestamp)
@@ -60,7 +60,7 @@ Packet continues with one of the following blocks, depending on the value of [Pa
 |          | 0x02        | [Synchronization block](#1.3.3---Synchronization-block) |                      |
 |          | 0x03        | [Acknowledgement block](#1.3.4---Acknowledgement-block) |                      |
 |          | 0x04        | [Linking block](#1.3.5---Linking-block)                 |                      |
-|          | 0x05        | [Entity block](#1.3.6---Entity-block)                   |                      |
+|          | 0x05        | [Replication block](#1.3.6---Replication-block)         |                      |
 |          | 0x06        | [Message block](#1.3.7---Message-block)                 |                      |
 
 ## 1.1 - Packet type
@@ -71,7 +71,7 @@ Packet continues with one of the following blocks, depending on the value of [Pa
 | 0x02  | Server/client | Synchronization packet. |
 | 0x03  | Server/client | Acknowledgement packet. |
 | 0x04  | Server        | Linking packet.         |
-| 0x05  | Server        | Entity packet.          |
+| 0x05  | Server        | Replication packet.     |
 | 0x06  | Server/Client | Message packet.         |
 
 ## 1.2 - Packet flags
@@ -128,18 +128,21 @@ Reliable flag in [Packet flags](#[Packet-flags]) is always 1.
 | Position | Byte count | Data type | Description          |
 | -------- | ---------- | --------- | -------------------- |
 | 0        | 1          | uchar     | Size of reason text. |
-| 1        | max 255    | uchar []  | Reason text.         |
+| 1        | max 255    | uchar *   | Reason text.         |
 
 ### 1.3.2 - Disconnection block
-| Position | Byte count | Data type | Description          |
-| -------- | ---------- | --------- | -------------------- |
-| 0        | 1          | uchar     | Size of reason text. |
+| Position | Type                                | Byte count | Data type | Description                |
+| -------- | ----------------------------------- | ---------- | --------- | -------------------------- |
+| 0        | [Packet flags](#1.2---Packet-flags) | 1          | uchar     | Packet properties.         |
+| 1        | [Sequence](#1.4---Sequence)         | 2          | ushort    | Sequence number of packet. |
+| 3        |                                     | 1          | uchar     | Size of reason text.       |
+| 4        |  ...                                | ...        | ...       | ...                        |
 
 Followed by following data, if the disconnection is sent from the server:
 
 | Position | Byte count | Data type | Description          |
 | -------- | ---------- | --------- | -------------------- |
-| 1        | max 255    | uchar []  | Reason text.         |
+| 1        | max 255    | uchar *   | Reason text.         |
 
 ### 1.3.3 - Synchronization block
 | Position |Type                                                           | Byte count | Data type | Description                |
@@ -179,15 +182,15 @@ Reliable and Ordered flags in [Packet flags](#[Packet-flags]) are always 1.
 
 | Position | Type                                          | Byte count | Data type | Description                |
 | -------- |---------------------------------------------- | ---------- | --------- | -------------------------- |
-| 0        | [Packet flags](#Packet-flags)               | 1          | uchar     | Packet properties.         |
+| 0        | [Packet flags](#Packet-flags)                 | 1          | uchar     | Packet properties.         |
 | 1        | [Sequence](#Sequence)                         | 2          | ushort    | Sequence number of packet. |
-| 3        | [Linking block type](#Linking-block-type) | 2          | ushort    | Type of linking packet.    |
+| 3        | [Linking block type](#Linking-block-type)     | 2          | ushort    | Type of linking packet.    |
 | 5        | ...                                           | ...        | ...       | ...                        |
 
 Block continues with one of the following blocks, depending on value of [Linking block type](#Linking-block-type).
 
-| Position | Linking block type | Type                                                    |
-| -------- | ------------------ | ------------------------------------------------------- |
+| Position | Linking block type | Type                                                |
+| -------- | ------------------ | --------------------------------------------------- |
 | 5        | 0x01               | [Linking table block](#Linking-table-block)         |
 | 5        | 0x02               | [Linking accepting block](#Linking-accepting-block) |
 
@@ -256,43 +259,52 @@ Followed by [Entity variable linking block](#Entity-variable-linking-block), occ
 | 0x0A  | char []                    | *          |
 
 
-### 1.3.6 - Entity block
+### 1.3.6 - Replication block
 Ordered flag in [Packet flags](#[Packet-flags]) is always 0.
 
-| Position | Type                            | Byte count | Data type | Description                |
-| -------- | ------------------------------- | ---------- | --------- | -------------------------- |
+| Position | Type                          | Byte count | Data type | Description                |
+| -------- | ----------------------------- | ---------- | --------- | -------------------------- |
 | 0        | [Packet flags](#Packet-flags) | 1          | uchar     | Packet properties.         |
-| 1        | [Sequence](#Sequence)           | 2          | ushort    | Sequence number of packet. |
-| 3        | [Timestamp](#Timestamp)         | 8          | uint64    | Sender timestamp.          |
-| 11       |                                 | 1          | uchar     | Entity link IDcount.       |
-| 12       | ...                             | ...        | ...       | ...                        |
+| 1        | [Sequence](#Sequence)         | 2          | ushort    | Sequence number of packet. |
+| 3        | [Timestamp](#Timestamp)       | 8          | uint64    | Sender timestamp.          |
+| 11       |                               | 1          | uchar     | Entity link ID count.      |
+| 11       |                               | 1          | uchar     | Variable link ID count.    |
+| 12       | ...                           | ...        | ...       | ...                        |
 
-Followed by [Entity link block](#Entity-link-block), occuring **Entity link count** times.
+Followed by [Replication entity block](#Replication-entity-block), occuring **Entity link ID count** times.  
+Then followed by [Replication variable block](#Replication-variable-block), occuring **Variable link ID count** times.
 
-### 1.3.6.1 - Entity link block
-| Position | Byte count | Data type | Description                    |
-| -------- | ---------- | --------- | ------------------------------ |
-| 0        | 2          | ushort    | Entity link ID                 |
-| 2        | 1          | uchar     | Entity variable link ID count. |
-| 3        | ...        | ...       | ...                            |
+### 1.3.6.1 - Replication entity block
+| Position | Byte count | Data type | Description                 |
+| -------- | ---------- | --------- | --------------------------- |
+| 0        | 2          | ushort    | Entity link ID              |
+| 2        | 1          | uchar     | Entity variable link count. |
+| 3        | ...        | ...       | ...                         |
 
 Followed by [Entity variable link block](#Entity-variable-link-entity-block), occuring **Entity count** times, for each [Entity link block](#Entity-link-block).
 
-### 1.3.6.2 - Entity variable link entity block
+### 1.3.6.2 - Replication entity variable block
 | Position | Byte count | Data type | Description              |
 | -------- | ---------- | --------- | ------------------------ |
 | 0        | 2          | ushort    | Entity variable link ID. |
 | 2        | 1          | uchar     | Entity ID count.         |
 | 3        | ...        | ...       | ...                      |
 
-Followed by [Entity variable block](#Entity-variable-block), occuring **Variable count** times, for each [Entity link entity block](#Entity-link-entity-block).
+Followed by [Replication entity variable data block](#Replication-entity-variable-data-block), occuring **Entity ID count** times.
 
-### 1.3.6.3 - Entity variable block
-| Position | Type                      | Byte count | Data type | Description              |
-| -------- | ------------------------- | ---------- | --------- | ------------------------ |
-| 0        | [Entity ID](#Entity-ID) | 1          | uchar     |[Entity ID](#Entity-ID) |
-| 1        |                           | 1          | uchar     | Data size.               |
-| 2        |                           | max 255    | uchar *   | Data.                    |
+### 1.3.6.3 - Replication entity variable data block
+| Position | Type                    | Byte count | Data type | Description              |
+| -------- | ----------------------- | ---------- | --------- | ------------------------ |
+| 0        | [Entity ID](#Entity-ID) | 1          | uchar     | [Entity ID](#Entity-ID). |
+| 1        |                         | 1          | uchar     | Data size.               |
+| 2        |                         | max 255    | uchar *   | Data.                    |
+
+### 1.3.6.4 - Replication variable block
+| Position | Byte count | Data type | Description        |
+| -------- | ---------- | --------- | ------------------ |
+| 0        | 2          | ushort    | Variable link ID.  |
+| 1        | 1          | uchar     | Data size.         |
+| 2        | max 255    | uchar *   | Data.              |
 
 ### 1.3.7 - Message block
 | Position | Type                            | Byte count | Data type | Description                |
@@ -343,7 +355,8 @@ Packet sent by server includes an optional reason text.
 # 4 - Acknowledgement
 All packets, flagged with the reliable flag, must be acknowledged by the receiver as soon as possible.
 Unacknowledged packets should be resent after any amount of time if they are marked as "reliable".
-Syncronization information should be used for determination of when the packets should be resent.
+Syncronization information could be used for determination of when the packets should be resent.
+Connection should be considered as lost after **x** number of unacknowledged resends.
 
 # 5 - Synchronization
 Synchronization interval is determined by the server and shared with the clients in the acception packet at connection.

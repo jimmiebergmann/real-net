@@ -145,30 +145,34 @@ namespace Net
     TEST(PacketPool, tests)
     {
         {
-            Net::Core::PacketPool pool(2048, 1000);
+            Net::Core::PacketPool pool(1000);
 
             EXPECT_EQ(pool.GetPoolSize(),           1000);
-            EXPECT_EQ(pool.DecreasePoolSize(50),     950);
-            EXPECT_EQ(pool.DecreasePoolSize(50),     900);
+            EXPECT_EQ(pool.DecreasePoolSize(50),    950);
+            EXPECT_EQ(pool.DecreasePoolSize(50),    900);
+            EXPECT_EQ(pool.GetTotalCount(),         1000);
+            EXPECT_EQ(pool.GetFreeCount(),          1000);
             EXPECT_EQ(pool.GetPoolSize(),           900);
-            EXPECT_EQ(pool.IncreasePoolSize(50),     950);
-            EXPECT_EQ(pool.IncreasePoolSize(50),     1000);
+            EXPECT_EQ(pool.IncreasePoolSize(50),    950);
+            EXPECT_EQ(pool.IncreasePoolSize(50),    1000);
             EXPECT_EQ(pool.GetPoolSize(),           1000);
 
-            EXPECT_EQ(pool.DecreasePoolSize(2000),   0);
+            EXPECT_EQ(pool.DecreasePoolSize(2000),  0);
             EXPECT_EQ(pool.GetPoolSize(),           0);
 
-            EXPECT_EQ(pool.IncreasePoolSize(1000),   1000);
+            EXPECT_EQ(pool.IncreasePoolSize(1000),  1000);
             EXPECT_EQ(pool.GetPoolSize(),           1000);
         }
         {
-            Net::Core::PacketPool pool(2048, 1000);
+            Net::Core::PacketPool pool(1000);
 
-            std::list<Net::Core::PacketPool::Packet *> packets;
+            std::list<Net::Core::Packet *> packets;
 
             for(size_t i = 0; i < 1000; i++)
             {
-                Net::Core::PacketPool::Packet * pPacket = pool.Get();
+                EXPECT_EQ(pool.GetFreeCount(), 1000 - static_cast<int>(i));
+
+                Net::Core::Packet * pPacket = pool.Get();
                 EXPECT_NE(pPacket, nullptr);
                 packets.push_back(pPacket);
             }
@@ -178,9 +182,10 @@ namespace Net
             }
         }
         {
-            Net::Core::PacketPool pool(2048, 1000);
+            Net::Core::PacketPool pool(1000);
             for(size_t i = 0; i < 2000; i++)
             {
+                EXPECT_EQ(pool.GetFreeCount(), std::max<int>(1000 - static_cast<int>(i), 0));
                 EXPECT_NE(pool.Get(), nullptr);
             }
         }

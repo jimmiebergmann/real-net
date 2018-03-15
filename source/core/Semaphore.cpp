@@ -77,6 +77,14 @@ namespace Net
             std::unique_lock<decltype(m_Mutex)> lock(m_Mutex);
             if (!m_Count)
             {
+                // Ugly hack for inifinity wait time.
+                if(timeout == Time::Infinite || timeout.AsMicroseconds() > 9223372036854775800ULL)
+                {
+                    m_Condition.wait(lock);
+                    --m_Count;
+                    return true;
+                }
+
                 if (m_Condition.wait_for(lock, std::chrono::microseconds(timeout.AsMicroseconds())) == std::cv_status::no_timeout)
                 {
                     --m_Count;

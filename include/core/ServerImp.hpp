@@ -27,10 +27,12 @@
 
 #include <core/SocketSelector.hpp>
 #include <core/UdpSocket.hpp>
+#include <core/Semaphore.hpp>
 #include <core/Safe.hpp>
 #include <core/PacketPool.hpp>
 #include <Peer.hpp>
 #include <map>
+#include <queue>
 #include <thread>
 #include <atomic>
 
@@ -51,17 +53,26 @@ namespace Net
             */
             ServerImp();
 
-            std::atomic<bool>                   m_Hosted;               ///< Is the server currently hosted?
-            std::atomic<bool>                   m_Stopping;             ///< Is the server currently stopping?
-            std::map<unsigned short, Peer *>    m_PeerMap;              ///< Map of all connected peers.
-            std::thread                         m_ReceiveThread;        ///< Thread for receiving packets.
-            std::thread                         m_ReliableThread;       ///< Thread for handling reliable packets.
-            std::thread                         m_ConnectionThread;     ///< Thread for handling incoming and established connections.
-            SocketSelector                      m_SocketSelector;       ///< Socket selector for receive socket.
-            UdpSocket                           m_ReceiveSocket;        ///< Socket for receiving data.
-            PacketPool                          m_PacketPool;           ///< Pool of packets;
-            const size_t                        m_MaxPacketSize;        ///< Maximum size of each packet.
-            std::mutex                          m_StopMutex;            ///< Mutex for starting server.
+            /**
+            * @breif Add packet to connection queue.
+            *        Packets in the connection queue will be handled by the connection thread.
+            *
+            */
+            void QueueConnectionPacket(Packet * packet);
+
+            std::atomic<bool>                   m_Hosted;                    ///< Is the server currently hosted?
+            std::atomic<bool>                   m_Stopping;                  ///< Is the server currently stopping?
+            std::map<unsigned short, Peer *>    m_PeerMap;                   ///< Map of all connected peers.
+            std::thread                         m_ReceiveThread;             ///< Thread for receiving packets.
+            std::thread                         m_ReliableThread;            ///< Thread for handling reliable packets.
+            std::thread                         m_ConnectionThread;          ///< Thread for handling incoming and established connections.
+            SocketSelector                      m_SocketSelector;            ///< Socket selector for receive socket.
+            UdpSocket                           m_ReceiveSocket;             ///< Socket for receiving data.
+            PacketPool                          m_PacketPool;                ///< Pool of packets;
+            std::mutex                          m_StopMutex;                 ///< Mutex for starting server.
+
+            Safe<std::queue<Packet *>>          m_ConnectionPacketQueue;     ///< Queue of connection packets.
+            Semaphore                           m_ConnectionPacketSemaphore; ///< Sempahore for triggering new connection thread.
 
             REALNET_TEST_FRIEND                 ///< Allow private tests.
         };

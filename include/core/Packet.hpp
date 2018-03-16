@@ -31,6 +31,8 @@
 namespace Net
 {
 
+    class Peer; ///< Forward declaration.
+
     namespace Core
     {
 
@@ -93,6 +95,7 @@ namespace Net
             unsigned short  sequence;       ///< Sequence number of packet.
             Time            receiveTime;    ///< Time of when the packet were received.
             SocketAddress   address;        ///< Socket address of packet.
+            Peer *          peer;           ///< Pointer to peer, if connected when receiving the packet.
 
         private:
 

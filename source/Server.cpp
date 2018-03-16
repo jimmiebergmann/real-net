@@ -44,7 +44,7 @@ namespace Net
 
     void Server::Host(const unsigned short port, Address::eType family)
     {
-        Core::SafeGuard sf(m_StopMutex);
+        Core::SafeGuard sf_HostStop(m_HostStopMutex);
 
         if(m_Hosted == true)
         {
@@ -89,10 +89,38 @@ namespace Net
                 }
 
                 pPacket->receiveTime = Clock::GetSystemTime();
+
+                const unsigned char packetType = pPacket->data[0];
+
+                // Check if the sender is connected or currently disconnecting.
+                Peer * pPeer = nullptr;
+                {
+                    Core::SafeGuard sf_connectedPeers(m_ConnectedPeers);
+
+                    auto connectedPeerIt = m_ConnectedPeers.Value.find(pPacket->address);
+                    if(connectedPeerIt != m_ConnectedPeers.Value.end())
+                    {
+                        {
+                            pPeer = connectedPeerIt->second;
+                            pPeer->AssignPacket(pPacket);
+                        }
+                    }
+                    else
+                    {
+                         // Unestablished peers are only allowed to send connection and disconnection packets.
+                        if(packetType != Core::Packet::ConnectionType && packetType != Core::Packet::DisconnectionType)
+                        {
+                            continue;
+                        }
+                    }
+                }
+
                 pPacket->size = static_cast<size_t>(receiveSize);
                 pPacket->SerializeSequenceNumber();
+                pPacket->peer = pPeer;
 
-                switch(pPacket->data[0])
+                // Handle peer data.
+                switch(packetType)
                 {
                     case Core::Packet::ConnectionType:
                     case Core::Packet::DisconnectionType:
@@ -105,6 +133,10 @@ namespace Net
                     }
                     break;
                     case Core::Packet::AcknowledgementType:
+                    {
+                    }
+                    break;
+                    case Core::Packet::MessageType:
                     {
                     }
                     break;
@@ -131,7 +163,7 @@ namespace Net
         {
             connectionThreadStarted.NotifyOne();
 
-            Time waitTime = Time::Infinite;
+            Time waitTime = Microseconds(1000000ULL);//Time::Infinite;
 
             while(m_Stopping == false)
             {
@@ -144,17 +176,18 @@ namespace Net
 
                 // Handle connection packets
                 Core::Packet * pPacket = nullptr;
+                Peer * pPeer = nullptr;
                 {
-                    Core::SafeGuard sf(m_ConnectionPacketQueue);
+                    Core::SafeGuard sf_peer(m_ConnectionPacketQueue);
                     if(m_ConnectionPacketQueue.Value.size())
                     {
                         pPacket = m_ConnectionPacketQueue.Value.front();
                         m_ConnectionPacketQueue.Value.pop();
+                        pPeer = pPacket->peer;
                     }
-
                 }
 
-                if(pPacket != nullptr)
+                if(pPacket != nullptr || (pPeer && pPeer->m_Disconnected != false))
                 {
                     switch(pPacket->data[0])
                     {
@@ -172,11 +205,6 @@ namespace Net
                                     }
 
                                     AddTrigger(new Core::OnPeerPreConnectTrigger(pPacket->address, pPacket->receiveTime));
-
-                                    std::cout << "Received " << pPacket->size << " bytes - connection packet." << std::endl;
-                                    std::cout << "Sequence " << pPacket->sequence << "." << std::endl;
-                                    std::cout << "From " << pPacket->address.Ip.GetAsString() << ":" << pPacket->address.Port << std::endl;
-                                    std::cout << "Delay: " << (Clock::GetSystemTime() - pPacket->receiveTime).AsMicroseconds() << std::endl  << std::endl;
                                 }
                                 break;
                                 default:
@@ -195,9 +223,17 @@ namespace Net
                             // Send ack.
                             // ...
 
+                            // Add disconnection trigger.
+                            if(pPeer)
+                            {
+                                AddTrigger(new Core::OnPeerDisconnectTrigger(pPeer));
+                            }
+
+
+
                             std::cout << "Received " << pPacket->size << " bytes - disconnection packet." << std::endl;
                             std::cout << "Sequence " << pPacket->sequence << "." << std::endl;
-                            std::cout << "From " << pPacket->address.Ip.GetAsString() << ":" << pPacket->address.Port << std::endl << std::endl;
+                            std::cout << "From " << pPacket->address.Ip.AsString() << ":" << pPacket->address.Port << std::endl << std::endl;
                         }
                         break;
                         default:
@@ -211,6 +247,27 @@ namespace Net
 
                 // Handle connection timeouts.
                 // ...
+
+                // Handle connecton cleanups.
+                {
+                    Core::SafeGuard sf_peerCleanup(m_PeerCleanup);
+
+                    for(auto it = m_PeerCleanup.Value.begin(); it != m_PeerCleanup.Value.end();)
+                    {
+                        Peer * pPeer = *it;
+
+                        if(pPeer->m_ActivePackets == 0)
+                        {
+                            delete pPeer;
+                            it = m_PeerCleanup.Value.erase(it);
+                        }
+                        else
+                        {
+                            ++it;
+                        }
+                    }
+
+                }
 
             }
         });
@@ -230,7 +287,7 @@ namespace Net
                     return;
                 }
 
-                // Handle connection packets
+                // Get next trigger.
                 Core::Trigger * pTrigger = nullptr;
                 {
                     Core::SafeGuard sf(m_TriggerQueue);
@@ -243,15 +300,27 @@ namespace Net
                     m_TriggerQueue.Value.pop();
                 }
 
+                // Handle current trigger.
                 switch(pTrigger->type)
                 {
                     case Core::Trigger::OnPeerPreConnect:
                     {
                         Core::OnPeerPreConnectTrigger * pCastTrigger = static_cast<Core::OnPeerPreConnectTrigger *>(pTrigger);
 
-                        Peer peer(0, pCastTrigger->address);
+                        Peer * pPeer = new Peer(0, pCastTrigger->address);
 
-                        if(OnPeerPreConnect(peer))
+                        // Call trigger
+                        bool acceptPeer = false;
+                        if(m_OnPeerPreConnect)
+                        {
+                            acceptPeer = m_OnPeerPreConnect(*pPeer);
+                        }
+                        else
+                        {
+                            acceptPeer = OnPeerPreConnect(*pPeer);
+                        }
+
+                        if(acceptPeer)
                         {
                             // Send accpet packet by default...
                             static const size_t acceptDataSize = 20;
@@ -268,24 +337,54 @@ namespace Net
                             if(m_Socket.Send(acceptData, acceptDataSize, pCastTrigger->address) != acceptDataSize)
                             {
                                 std::cout << "Failed to send accept message." << std::endl;
+                                delete pPeer;
                                 break;
                             }
 
                             std::cout << "Sent accept packet." << std::endl;
+
+                            // Add peer to pre connection list.
+                            // ...
+
+                            // TEMPORARY
+                            delete pPeer;
                         }
                         else
                         {
+                            // Send reject packet.
+                            // ..
 
+                            delete pPeer;
                         }
 
                     }
                     break;
                     case Core::Trigger::OnPeerConnect:
                     {
+                        Core::OnPeerConnectTrigger * pCastTrigger = static_cast<Core::OnPeerConnectTrigger *>(pTrigger);
+
+                        if(m_OnPeerConnect)
+                        {
+                            m_OnPeerConnect(*pCastTrigger->peer);
+                        }
+                        else
+                        {
+                            OnPeerConnect(*pCastTrigger->peer);
+                        }
                     }
                     break;
                     case Core::Trigger::OnPeerDisconnect:
                     {
+                        Core::OnPeerDisconnectTrigger * pCastTrigger = static_cast<Core::OnPeerDisconnectTrigger *>(pTrigger);
+
+                        if(m_OnPeerDisconnect)
+                        {
+                            m_OnPeerDisconnect(*pCastTrigger->peer);
+                        }
+                        else
+                        {
+                            OnPeerDisconnect(*pCastTrigger->peer);
+                        }
                     }
                     break;
                     default:
@@ -308,7 +407,7 @@ namespace Net
 
     void Server::Stop()
     {
-        Core::SafeGuard sf(m_StopMutex);
+        Core::SafeGuard sf_HostStop(m_HostStopMutex);
 
         if(m_Hosted == false)
         {
@@ -332,6 +431,57 @@ namespace Net
 
         m_Socket.Close();
         m_Stopping = false;
+    }
+
+    void Server::SetOnPeerPreConnect(const std::function<bool(Peer & peer)> & function)
+    {
+        Core::SafeGuard sf_HostStop(m_HostStopMutex);
+
+        if(m_OnPeerPreConnect != nullptr)
+        {
+            throw Exception("Cannot call SetOnPeerPreConnect twice.");
+        }
+
+        if(m_Hosted)
+        {
+            throw Exception("Cannot call SetOnPeerPreConnect while hosted.");
+        }
+
+        m_OnPeerPreConnect = function;
+    }
+
+    void Server::SetOnPeerConnect(const std::function<void(Peer & peer)> & function)
+    {
+        Core::SafeGuard sf_HostStop(m_HostStopMutex);
+
+        if(m_OnPeerConnect != nullptr)
+        {
+            throw Exception("Cannot call SetOnPeerConnect twice.");
+        }
+
+        if(m_Hosted)
+        {
+            throw Exception("Cannot call SetOnPeerConnect while hosted.");
+        }
+
+        m_OnPeerConnect = function;
+    }
+
+    void Server::SetOnPeerDisconnect(const std::function<void(Peer & peer)> & function)
+    {
+        Core::SafeGuard sf_HostStop(m_HostStopMutex);
+
+        if(m_OnPeerDisconnect != nullptr)
+        {
+            throw Exception("Cannot call SetOnPeerDisconnect twice.");
+        }
+
+        if(m_Hosted)
+        {
+            throw Exception("Cannot call SetOnPeerDisconnect while hosted.");
+        }
+
+        m_OnPeerDisconnect = function;
     }
 
     bool Server::OnPeerPreConnect(Peer & peer)

@@ -143,13 +143,15 @@ namespace Net
         * @breif Get address as readable string.
         *
         */
-        std::string GetAsString() const;
+        std::string AsString() const;
 
         /**
         * @breif Compare with another address.
         *
         */
         bool operator == (const Address & address) const;
+        bool operator != (const Address & address) const;
+        bool operator < (const Address & address) const;
 
         /**
         * @breif The "Zero" address contains only "zero" bytes.
@@ -187,6 +189,14 @@ namespace Net
         *
         */
         SocketAddress(const Address & address = Address::Zero, const unsigned short port = 0);
+
+        /**
+        * @breif Compare with another socket address.
+        *
+        */
+        bool operator == (const SocketAddress & socketAddress) const;
+        bool operator != (const SocketAddress & socketAddress) const;
+        bool operator < (const SocketAddress & socketAddress) const;
 
         Address         Ip;     ///< Socket address.
         unsigned short  Port;   ///< Socket port.

@@ -23,7 +23,7 @@
 *
 */
 
-#include <core/Build.hpp>
+#include <core/PeerImp.hpp>
 
 namespace Net
 {
@@ -31,40 +31,38 @@ namespace Net
     namespace Core
     {
 
-        size_t GetLastSystemError()
+        PeerImp::PeerImp(const unsigned short id, const SocketAddress & socketAddress) :
+            m_Id(id),
+            m_SocketAddress(socketAddress),
+            m_ActivePackets(0),
+            m_Disconnected(false)
         {
-        #if defined(REALNET_PLATFORM_WINDOWS)
-            return static_cast<size_t>(GetLastError());
-        #elif defined(REALNET_PLATFORM_LINUX)
-            return static_cast<size_t>(errno);
-        #endif
         }
 
-        bool Initializer::m_IsLittleEndian = true;
-
-        Initializer::Initializer()
+        void PeerImp::AssignPacket(Packet * packet)
         {
-            // Winsock initialization.
-        #if defined(REALNET_PLATFORM_WINDOWS)
-            WSADATA wsaData;
-            if( WSAStartup(MAKEWORD(2,2), &wsaData))
+            if(packet == nullptr || reinterpret_cast<PeerImp*>(packet->peer) != this)
             {
-                throw std::runtime_error("Failed to initialize winsock.");
+                throw Exception("Cannot assign packet to peer. Packet == nullptr, or packet's peer is incorrect.");
             }
-        #endif
 
-            // Little endian initialization.
-            m_IsLittleEndian = 1 != htonl(1);
+            m_ActivePackets++;
         }
 
-        /**
-        * @breif Returns true if the current system is using little endian.
-        *
-        */
-        bool Initializer::IsLittleEndian()
+
+        void PeerImp::ReturnPacket(Packet * packet)
         {
-            return m_IsLittleEndian;
-        }
+            if(packet == nullptr || reinterpret_cast<PeerImp*>(packet->peer) != this)
+            {
+                throw Exception("Cannot return packet to peer. Packet == nullptr, or packet's peer is incorrect.");
+            }
 
+            if(m_ActivePackets == 0)
+            {
+                throw Exception("Cannot return packet to peer if m_ActivePackets == 0.");
+            }
+
+            m_ActivePackets--;
+        }
     }
 }

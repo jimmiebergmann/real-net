@@ -36,9 +36,9 @@
 
     #include <core/platform/LinuxHeaders.hpp>
 
-	#define REALNET_ENDIAN_16(x) ((1!=htonl(1)) ? (x) : bswap_16(x))
-    #define REALNET_ENDIAN_32(x) ((1!=htonl(1)) ? (x) : bswap_32(x))
-    #define REALNET_ENDIAN_64(x) ((1!=htonl(1)) ? (x) : bswap_64(x))
+	#define REALNET_ENDIAN_16(x) ((Net::Core::Initializer::IsLittleEndian()) ? (x) : bswap_16(x))
+    #define REALNET_ENDIAN_32(x) ((Net::Core::Initializer::IsLittleEndian()) ? (x) : bswap_32(x))
+    #define REALNET_ENDIAN_64(x) ((Net::Core::Initializer::IsLittleEndian()) ? (x) : bswap_64(x))
 
 #else
 	#error No platform defined.
@@ -67,5 +67,34 @@ namespace Net
         *
         */
         size_t GetLastSystemError();
+
+        /**
+        * @breif Initializer class's constructor is called once, and will initialize
+        *        winsock and check the endianess.
+        *
+        */
+        class Initializer
+        {
+
+        public:
+
+            /**
+            * @breif Constructor.
+            *
+            */
+            Initializer();
+
+            /**
+            * @breif Returns true if the current system is using little endian.
+            *
+            */
+            static bool IsLittleEndian();
+
+        private:
+
+            static bool m_IsLittleEndian; ///< Little endian flagg.
+
+        };
+        static const Initializer InitializerInstance;
     }
 }

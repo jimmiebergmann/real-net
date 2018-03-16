@@ -28,6 +28,7 @@
 #include <core/ServerImp.hpp>
 #include <EntityManager.hpp>
 #include <Address.hpp>
+#include <functional>
 
 
 namespace Net
@@ -70,6 +71,30 @@ namespace Net
         *
         */
         void Stop();
+
+        /**
+        * @breif Set the "On peer pre connect" trigger. Overloads the virtual function.
+        *
+        * @throw Exception If function already is set, or if the server is currently hosted.
+        *
+        */
+        void SetOnPeerPreConnect(const std::function<bool(Peer & peer)> & function);
+
+        /**
+        * @breif Set the "On peer connect" trigger. Overloads the virtual function.
+        *
+        * @throw Exception If function already is set, or if the server is currently hosted.
+        *
+        */
+        void SetOnPeerConnect(const std::function<void(Peer & peer)> & function);
+
+        /**
+        * @breif Set the "On peer disconnect" trigger. Overloads the virtual function.
+        *
+        * @throw Exception If function already is set, or if the server is currently hosted.
+        *
+        */
+        void SetOnPeerDisconnect(const std::function<void(Peer & peer)> & function);
 
     private:
 

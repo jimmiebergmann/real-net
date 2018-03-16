@@ -6,6 +6,27 @@ int RunServer()
 {
     Net::Server server;
 
+    // Set triggers.
+    server.SetOnPeerPreConnect([](Net::Peer & peer) -> bool
+    {
+        std::cout << "Peer is trying to connect!" << std::endl;
+
+        return true;
+    });
+    server.SetOnPeerConnect([](Net::Peer & peer)
+    {
+        std::cout << "Peer Connected: " << peer.GetAddress().Ip.AsString() << "-" << peer.GetAddress().Port << std::endl;
+
+        return true;
+    });
+    server.SetOnPeerDisconnect([](Net::Peer & peer)
+    {
+        std::cout << "Peer Disconnect!" << std::endl;
+
+        return true;
+    });
+
+    // Start server.
     server.Host(12345);
 
     std::cout << "Server is running." << std::endl;

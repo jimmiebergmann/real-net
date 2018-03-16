@@ -37,3 +37,13 @@
 
 #define closesocket close
 
+namespace Net
+{
+
+    namespace Core
+    {
+
+        typedef unsigned int SocketHandle;
+    }
+
+}

@@ -24,6 +24,7 @@
 */
 
 #include <core/PacketPool.hpp>
+#include <Peer.hpp>
 #include <Exception.hpp>
 
 namespace Net
@@ -153,6 +154,12 @@ namespace Net
                 delete packet;
                 return;
             }
+
+            if(packet->peer)
+            {
+                reinterpret_cast<PeerImp*>(packet->peer)->ReturnPacket(packet);
+            }
+            packet->peer = nullptr;
 
             m_FreePackets.insert(packet);
         }

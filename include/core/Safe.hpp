@@ -131,6 +131,22 @@ namespace Net
                 return *this;
             }
 
+            /**
+            * @breif Thread safe operation for comparing value.
+            *
+            */
+            bool operator == (const T & value)
+            {
+                std::lock_guard<std::mutex> gm(Mutex);
+                return Value == value;
+            }
+
+            bool operator != (const T & value)
+            {
+                std::lock_guard<std::mutex> gm(Mutex);
+                return Value != value;
+            }
+
             T			Value; ///< Template value.
             std::mutex	Mutex; ///< Mutex locking in thread safe methods.
 

@@ -29,8 +29,7 @@ namespace Net
 {
 
     Peer::Peer(const unsigned short id, const SocketAddress & socketAddress) :
-        m_Id(id),
-        m_SocketAddress(socketAddress)
+        PeerImp(id, socketAddress)
     {
     }
 
@@ -39,7 +38,7 @@ namespace Net
         return m_Id;
     }
 
-    const SocketAddress & Peer::GetSocketAddress() const
+    const SocketAddress & Peer::GetAddress() const
     {
         return m_SocketAddress;
     }

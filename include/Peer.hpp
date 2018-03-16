@@ -25,22 +25,25 @@
 
 #pragma once
 
-#include <core/Build.hpp>
-#include <Address.hpp>
+#include <core/PeerImp.hpp>
+
 
 namespace Net
 {
+
+ //   namespace Core{ class PacketPool;} ///< Forward declaration.
 
     /**
     * @breif Peer class describing connecting peer to server.
     *
     */
-    class Peer
+    class Peer : private Core::PeerImp
     {
 
     public:
 
         friend class Server;
+        //friend class Core::PacketPool;
 
         /**
         * @breif Get id of peer.
@@ -52,7 +55,7 @@ namespace Net
         * @breif Get socket address of peer.
         *
         */
-        const SocketAddress & GetSocketAddress() const;
+        const SocketAddress & GetAddress() const;
 
     protected:
 
@@ -61,11 +64,6 @@ namespace Net
         *
         */
         Peer(const unsigned short id, const SocketAddress & socketAddress);
-
-    private:
-
-        unsigned short  m_Id;               ///< Id of peer.
-        SocketAddress   m_SocketAddress;    ///< Ip and port of peer.
 
     };
 

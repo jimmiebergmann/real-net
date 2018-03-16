@@ -33,27 +33,6 @@ namespace Net
     namespace Core
     {
 
-    #if defined(REALNET_PLATFORM_WINDOWS)
-        typedef SOCKET SocketHandle;
-
-        // Intiialize winsock initializer.
-        struct WinsockInitializer
-        {
-            WinsockInitializer()
-            {
-                WSADATA wsaData;
-                if( WSAStartup(MAKEWORD(2,2), &wsaData))
-                {
-                    throw std::runtime_error("Failed to initialize winsock.");
-                }
-            }
-        };
-        static WinsockInitializer RealnetWinsockInitializer;
-
-    #elif defined(REALNET_PLATFORM_LINUX)
-        typedef unsigned int SocketHandle;
-    #endif
-
         /**
         * @breif Socket base class.
         *

@@ -235,7 +235,7 @@ namespace Net
         return m_Bytes;
     }
 
-    std::string Address::GetAsString() const
+    std::string Address::AsString() const
     {
         if(m_Type == Ipv4)
         {
@@ -272,12 +272,25 @@ namespace Net
 
     bool Address::operator == (const Address & address) const
     {
-        if(m_Type != address.m_Type)
+        return m_Type == address.m_Type && memcmp(m_Bytes, address.m_Bytes, 16) == 0;
+    }
+
+    bool Address::operator != (const Address & address) const
+    {
+        return m_Type != address.m_Type || memcmp(m_Bytes, address.m_Bytes, 16) != 0;
+    }
+
+    bool Address::operator < (const Address & address) const
+    {
+        if(m_Type < address.m_Type)
+        {
+            return true;
+        }
+        if(m_Type > address.m_Type)
         {
             return false;
         }
-
-        return memcmp(m_Bytes, address.m_Bytes, 16) == 0;
+        return memcmp(m_Bytes, address.m_Bytes, 16) < 0;
     }
 
     const Address & Address::Loopback(const eType family)
@@ -291,6 +304,21 @@ namespace Net
         Ip(address),
         Port(port)
     {
+    }
+
+    bool SocketAddress::operator == (const SocketAddress & socketAddress) const
+    {
+        return Port == socketAddress.Port && Ip == socketAddress.Ip;
+    }
+
+    bool SocketAddress::operator != (const SocketAddress & socketAddress) const
+    {
+        return Port != socketAddress.Port || Ip != socketAddress.Ip;
+    }
+
+    bool SocketAddress::operator < (const SocketAddress & socketAddress) const
+    {
+        return Port < socketAddress.Port || Ip < socketAddress.Ip;
     }
 
 }

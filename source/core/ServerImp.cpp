@@ -23,8 +23,7 @@
 *
 */
 
-#include <Server.hpp>
-#include <core/Packet.hpp>
+#include <core/ServerImp.hpp>
 
 namespace Net
 {
@@ -35,7 +34,10 @@ namespace Net
         ServerImp::ServerImp() :
             m_Hosted(false),
             m_Stopping(false),
-            m_PacketPool(10)
+            m_PacketPool(10),
+            m_OnPeerPreConnect(nullptr),
+            m_OnPeerConnect(nullptr),
+            m_OnPeerDisconnect(nullptr)
         {
         }
 

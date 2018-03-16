@@ -221,7 +221,7 @@ namespace Net
                 EXPECT_EQ(address.GetType(), Net::Address::Ipv4);
                 EXPECT_TRUE(address.IsLoopback());
                 EXPECT_FALSE(address.IsZero());
-                EXPECT_TRUE(address.GetAsString() == "127.0.0.1");
+                EXPECT_TRUE(address.AsString() == "127.0.0.1");
             }
             {
                 Net::Address address("::1");
@@ -265,6 +265,16 @@ namespace Net
             EXPECT_FALSE(address == Net::Address::Zero);
             EXPECT_TRUE(address == address);
             EXPECT_TRUE(address == Net::Address::Loopback(Net::Address::Ipv4));
+
+            EXPECT_TRUE(address != Net::Address::Loopback(Net::Address::Ipv6));
+            EXPECT_FALSE(address != address);
+
+            EXPECT_TRUE(address < Net::Address::Loopback(Net::Address::Ipv6));
+            EXPECT_FALSE(Net::Address::Loopback(Net::Address::Ipv6) < address);
+
+            EXPECT_FALSE(Net::Address(1, 2, 3, 4) < Net::Address(1, 2, 3, 4));
+            EXPECT_TRUE(Net::Address(1, 2, 3, 4) < Net::Address(1, 2, 3, 5));
+            EXPECT_FALSE(Net::Address(1, 2, 3, 5) < Net::Address(1, 2, 3, 4));
         }
     }
 
@@ -281,8 +291,19 @@ namespace Net
         EXPECT_TRUE(socketAddress.Ip.IsZero());
 
         EXPECT_EQ(socketAddress.Port, 123);
-        socketAddress.Port =321;
+        socketAddress.Port = 321;
         EXPECT_EQ(socketAddress.Port, 321);
+
+        EXPECT_TRUE(Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12345) <
+                    Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12346));
+
+
+        EXPECT_FALSE(Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12346) <
+                    Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12345));
+
+        EXPECT_FALSE(Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12345) <
+                    Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv4), 12345));
+
     }
 
     TEST(UdpSocket_SocketSelector, tests)
@@ -398,7 +419,7 @@ namespace Net
                     EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
                     EXPECT_STREQ(data, "Hello world!");
                     EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv4);
-                    std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.GetAsString() << std::endl;
+                    std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.AsString() << std::endl;
                 }
             }
             {
@@ -417,7 +438,7 @@ namespace Net
                     EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
                     EXPECT_STREQ(data, "Hello world!");
                     EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv6);
-                    std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.GetAsString() << std::endl;
+                    std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.AsString() << std::endl;
                 }
             }
             {
@@ -436,7 +457,7 @@ namespace Net
                         EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
                         EXPECT_STREQ(data, "Hello world!");
                         EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv6);
-                        std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.GetAsString() << std::endl;
+                        std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.AsString() << std::endl;
                     }
                 }
                 {
@@ -449,7 +470,7 @@ namespace Net
                         EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
                         EXPECT_STREQ(data, "Hello world!");
                         EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv6);
-                        std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.GetAsString() << std::endl;
+                        std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.AsString() << std::endl;
                     }
                 }
 

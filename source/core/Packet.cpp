@@ -34,7 +34,8 @@ namespace Net
         Packet::Packet() :
             data(new unsigned char[MaxPacketSize]),
             size(0),
-            sequence(0)
+            sequence(0),
+            peer(nullptr)
         {
         }
 

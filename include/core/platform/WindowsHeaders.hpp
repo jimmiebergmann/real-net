@@ -26,3 +26,15 @@
 #pragma once
 
 #include <windows.h>
+
+namespace Net
+{
+
+    namespace Core
+    {
+
+        typedef SOCKET SocketHandle;
+
+    }
+
+}

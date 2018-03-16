@@ -25,58 +25,68 @@
 
 #pragma once
 
-#include <Address.hpp>
+#include <Time.hpp>
+#include <Peer.hpp>
+
 
 namespace Net
 {
 
     namespace Core
     {
-
-    #if defined(REALNET_PLATFORM_WINDOWS)
-        typedef SOCKET SocketHandle;
-
-        // Intiialize winsock initializer.
-        struct WinsockInitializer
-        {
-            WinsockInitializer()
-            {
-                WSADATA wsaData;
-                if( WSAStartup(MAKEWORD(2,2), &wsaData))
-                {
-                    throw std::runtime_error("Failed to initialize winsock.");
-                }
-            }
-        };
-        static WinsockInitializer RealnetWinsockInitializer;
-
-    #elif defined(REALNET_PLATFORM_LINUX)
-        typedef unsigned int SocketHandle;
-    #endif
-
-        /**
-        * @breif Socket base class.
-        *
-        */
-        class Socket
+        class Trigger
         {
 
         public:
 
-            /**
-            * @breif Get socket handle from socket class.
-            *
-            */
-            virtual SocketHandle GetHandle() const = 0;
+            enum eType
+            {
+                OnPeerPreConnect,
+                OnPeerConnect,
+                OnPeerDisconnect
+            };
 
-            /**
-            * @breif Get socket address of socket.
-            *
-            */
-            virtual SocketAddress GetSocketAddress() const = 0;
+            Trigger(const eType type);
+            virtual ~Trigger();
+
+            eType type;
 
         };
 
+        class OnPeerPreConnectTrigger : public Trigger
+        {
+
+        public:
+
+            OnPeerPreConnectTrigger(const SocketAddress & address, const Time & receiveTime);
+
+            SocketAddress   address;
+            Time            receiveTime;
+
+        };
+
+        class OnPeerConnectTrigger : public Trigger
+        {
+
+        public:
+
+            OnPeerConnectTrigger(Peer * peer);
+
+            Peer * peer;
+
+        };
+
+        class OnPeerDisconnectTrigger : public Trigger
+        {
+
+        public:
+
+            OnPeerDisconnectTrigger(Peer * peer);
+
+            Peer * peer;
+
+        };
     }
 
 }
+

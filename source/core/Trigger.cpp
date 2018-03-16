@@ -23,9 +23,7 @@
 *
 */
 
-#pragma once
-
-#include <Address.hpp>
+#include <core/Trigger.hpp>
 
 namespace Net
 {
@@ -33,49 +31,36 @@ namespace Net
     namespace Core
     {
 
-    #if defined(REALNET_PLATFORM_WINDOWS)
-        typedef SOCKET SocketHandle;
-
-        // Intiialize winsock initializer.
-        struct WinsockInitializer
+        Trigger::Trigger(const eType p_type) :
+            type(p_type)
         {
-            WinsockInitializer()
-            {
-                WSADATA wsaData;
-                if( WSAStartup(MAKEWORD(2,2), &wsaData))
-                {
-                    throw std::runtime_error("Failed to initialize winsock.");
-                }
-            }
-        };
-        static WinsockInitializer RealnetWinsockInitializer;
+        }
 
-    #elif defined(REALNET_PLATFORM_LINUX)
-        typedef unsigned int SocketHandle;
-    #endif
-
-        /**
-        * @breif Socket base class.
-        *
-        */
-        class Socket
+        Trigger::~Trigger()
         {
+        }
 
-        public:
+        OnPeerPreConnectTrigger::OnPeerPreConnectTrigger(const SocketAddress & p_address, const Time & p_receiveTime) :
+            Trigger(OnPeerPreConnect),
+            address(p_address),
+            receiveTime(p_receiveTime)
+        {
+        }
 
-            /**
-            * @breif Get socket handle from socket class.
-            *
-            */
-            virtual SocketHandle GetHandle() const = 0;
 
-            /**
-            * @breif Get socket address of socket.
-            *
-            */
-            virtual SocketAddress GetSocketAddress() const = 0;
 
-        };
+        OnPeerConnectTrigger::OnPeerConnectTrigger(Peer * p_peer) :
+            Trigger(OnPeerConnect),
+            peer(p_peer)
+        {
+        }
+
+
+        OnPeerDisconnectTrigger::OnPeerDisconnectTrigger(Peer * p_peer) :
+            Trigger(OnPeerDisconnect),
+            peer(p_peer)
+        {
+        }
 
     }
 

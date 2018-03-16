@@ -275,14 +275,14 @@ namespace Net
 
         Net::SocketAddress socketAddress(address, 123);
 
-        EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv4);
-        EXPECT_TRUE(socketAddress.GetIp().IsLoopback());
-        socketAddress.SetIp(Net::Address::Zero);
-        EXPECT_TRUE(socketAddress.GetIp().IsZero());
+        EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv4);
+        EXPECT_TRUE(socketAddress.Ip.IsLoopback());
+        socketAddress.Ip = Net::Address::Zero;
+        EXPECT_TRUE(socketAddress.Ip.IsZero());
 
-        EXPECT_EQ(socketAddress.GetPort(), 123);
-        socketAddress.SetPort(321);
-        EXPECT_EQ(socketAddress.GetPort(), 321);
+        EXPECT_EQ(socketAddress.Port, 123);
+        socketAddress.Port =321;
+        EXPECT_EQ(socketAddress.Port, 321);
     }
 
     TEST(UdpSocket_SocketSelector, tests)
@@ -397,8 +397,8 @@ namespace Net
                     char data[32];
                     EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
                     EXPECT_STREQ(data, "Hello world!");
-                    EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv4);
-                    std::cout << GTEST_PRINT << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                    EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv4);
+                    std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.GetAsString() << std::endl;
                 }
             }
             {
@@ -416,8 +416,8 @@ namespace Net
                     char data[32];
                     EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
                     EXPECT_STREQ(data, "Hello world!");
-                    EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv6);
-                    std::cout << GTEST_PRINT << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                    EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv6);
+                    std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.GetAsString() << std::endl;
                 }
             }
             {
@@ -435,8 +435,8 @@ namespace Net
                         char data[32];
                         EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
                         EXPECT_STREQ(data, "Hello world!");
-                        EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv6);
-                        std::cout << GTEST_PRINT << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                        EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv6);
+                        std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.GetAsString() << std::endl;
                     }
                 }
                 {
@@ -448,8 +448,8 @@ namespace Net
                         char data[32];
                         EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
                         EXPECT_STREQ(data, "Hello world!");
-                        EXPECT_EQ(socketAddress.GetIp().GetType(), Net::Address::Ipv6);
-                        std::cout << GTEST_PRINT << "Ip: " << socketAddress.GetIp().GetAsString() << std::endl;
+                        EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv6);
+                        std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.GetAsString() << std::endl;
                     }
                 }
 

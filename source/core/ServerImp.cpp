@@ -47,6 +47,18 @@ namespace Net
             m_ConnectionPacketSemaphore.NotifyOne();
         }
 
+        void ServerImp::AddTrigger(Trigger * trigger)
+        {
+            if(trigger == nullptr)
+            {
+                throw Exception("Passed nullptr to AddTrigger.");
+            }
+
+            Core::SafeGuard sf(m_TriggerQueue);
+            m_TriggerQueue.Value.push(trigger);
+            m_TriggerSemaphore.NotifyOne();
+        }
+
     }
 
 }

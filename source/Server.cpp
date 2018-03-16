@@ -27,6 +27,7 @@
 #include <core/Safe.hpp>
 #include <core/Packet.hpp>
 #include <Clock.hpp>
+#include <cstring>
 #include <iostream>
 
 namespace Net
@@ -56,8 +57,8 @@ namespace Net
             return;
         }
 
-        m_ReceiveSocket.Open(port, family);
-        m_SocketSelector.Start(&m_ReceiveSocket);
+        m_Socket.Open(port, family);
+        m_SocketSelector.Start(&m_Socket);
 
         // Receive thead
         Core::Semaphore receiveThreadStarted;
@@ -74,11 +75,7 @@ namespace Net
                     continue;
                 }
 
-                int receiveSize = m_ReceiveSocket.Receive(pPacket->Data, Core::Packet::MaxPacketSize, pPacket->Address);
-                if(receiveSize == 0)
-                {
-                    continue;
-                }
+                int receiveSize = m_Socket.Receive(pPacket->data, Core::Packet::MaxPacketSize, pPacket->address);
 
                 if(receiveSize < 0)
                 {
@@ -86,27 +83,31 @@ namespace Net
                     break;
                 }
 
-                const unsigned char packetType = pPacket->Data[0];
-                if(packetType >= Core::Packet::TypeCount)
+                if(receiveSize < 3)
                 {
                     continue;
                 }
 
-                pPacket->ReceiveTime = Clock::GetSystemTime();
-                pPacket->Size = static_cast<size_t>(receiveSize);
+                pPacket->receiveTime = Clock::GetSystemTime();
+                pPacket->size = static_cast<size_t>(receiveSize);
+                pPacket->SerializeSequenceNumber();
 
-                switch(packetType)
+                switch(pPacket->data[0])
                 {
                     case Core::Packet::ConnectionType:
-                        QueueConnectionPacket(pPacket);
-                        break;
                     case Core::Packet::DisconnectionType:
+                    {
                         QueueConnectionPacket(pPacket);
-                        break;
+                    }
+                    break;
                     case Core::Packet::SynchronizationType:
-                        break;
+                    {
+                    }
+                    break;
                     case Core::Packet::AcknowledgementType:
-                        break;
+                    {
+                    }
+                    break;
                     default:
                         break;
                 };
@@ -118,13 +119,13 @@ namespace Net
 
         // Reliable thread.
         Core::Semaphore reliableThreadStarted;
-        m_ReliableThread = std::thread([this, &reliableThreadStarted]()
+        m_ReliableThread = std::thread([&reliableThreadStarted]()
         {
             reliableThreadStarted.NotifyOne();
 
         });
 
-        // Reliable thread.
+        // Connection thread.
         Core::Semaphore connectionThreadStarted;
         m_ConnectionThread = std::thread([this, &connectionThreadStarted]()
         {
@@ -155,36 +156,56 @@ namespace Net
 
                 if(pPacket != nullptr)
                 {
-                    switch(pPacket->Data[0])
+                    switch(pPacket->data[0])
                     {
+                        // Connection packet.
                         case Core::Packet::ConnectionType:
                         {
-                            if(pPacket->Size != 4 || pPacket->Data[1] != Core::Packet::ConnectionTypeInit)
+                            switch(pPacket->data[3])
                             {
+                                // Connection init packet.
+                                case Core::Packet::ConnectionTypeInit:
+                                {
+                                    if(pPacket->size != 4 || pPacket->sequence != 0)
+                                    {
+                                        break;
+                                    }
+
+                                    AddTrigger(new Core::OnPeerPreConnectTrigger(pPacket->address, pPacket->receiveTime));
+
+                                    std::cout << "Received " << pPacket->size << " bytes - connection packet." << std::endl;
+                                    std::cout << "Sequence " << pPacket->sequence << "." << std::endl;
+                                    std::cout << "From " << pPacket->address.Ip.GetAsString() << ":" << pPacket->address.Port << std::endl;
+                                    std::cout << "Delay: " << (Clock::GetSystemTime() - pPacket->receiveTime).AsMicroseconds() << std::endl  << std::endl;
+                                }
                                 break;
-                            }
-
-                            const unsigned short sequence = pPacket->SerializeSequenceNumber();
-                            if(sequence != 0)
-                            {
-                                break;
-                            }
-
-
-                            std::cout << "Received " << pPacket->Size << " bytes - connection packet - from ";
-                            std::cout << pPacket->Address.Ip.GetAsString() << ":" << pPacket->Address.Port << std::endl;
-
-
+                                default:
+                                    break;
+                            };
                         }
                         break;
+                        // Disconnection packet.
                         case Core::Packet::DisconnectionType:
                         {
+                            if(pPacket->size != 3)
+                            {
+                                break;
+                            }
 
+                            // Send ack.
+                            // ...
+
+                            std::cout << "Received " << pPacket->size << " bytes - disconnection packet." << std::endl;
+                            std::cout << "Sequence " << pPacket->sequence << "." << std::endl;
+                            std::cout << "From " << pPacket->address.Ip.GetAsString() << ":" << pPacket->address.Port << std::endl << std::endl;
                         }
                         break;
                         default:
                             break;
                     };
+
+                    m_PacketPool.Return(pPacket);
+
                 }
 
 
@@ -194,11 +215,93 @@ namespace Net
             }
         });
 
+        // Trigger queue.
+        Core::Semaphore triggerThreadStarted;
+        m_TriggerThread = std::thread([this, &triggerThreadStarted]()
+        {
+            triggerThreadStarted.NotifyOne();
+
+            while(m_Stopping == false)
+            {
+                m_TriggerSemaphore.Wait();
+
+                if(m_Stopping)
+                {
+                    return;
+                }
+
+                // Handle connection packets
+                Core::Trigger * pTrigger = nullptr;
+                {
+                    Core::SafeGuard sf(m_TriggerQueue);
+                    if(m_TriggerQueue.Value.size() == 0)
+                    {
+                        continue;
+                    }
+
+                    pTrigger = m_TriggerQueue.Value.front();
+                    m_TriggerQueue.Value.pop();
+                }
+
+                switch(pTrigger->type)
+                {
+                    case Core::Trigger::OnPeerPreConnect:
+                    {
+                        Core::OnPeerPreConnectTrigger * pCastTrigger = static_cast<Core::OnPeerPreConnectTrigger *>(pTrigger);
+
+                        Peer peer(0, pCastTrigger->address);
+
+                        if(OnPeerPreConnect(peer))
+                        {
+                            // Send accpet packet by default...
+                            static const size_t acceptDataSize = 20;
+                            static unsigned char acceptData[acceptDataSize] =
+                            {
+                                0, 1, 0, Core::Packet::ConnectionTypeAccept,   0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0
+                            };
+
+                            const unsigned long long receiveTime = REALNET_ENDIAN_64(pCastTrigger->receiveTime.AsMicroseconds());
+                            memcpy(acceptData + 4, &receiveTime, 8);
+                            const unsigned long long sendTime = REALNET_ENDIAN_64(Clock::GetSystemTime().AsMicroseconds());
+                            memcpy(acceptData + 12, &sendTime, 8);
+
+                            if(m_Socket.Send(acceptData, acceptDataSize, pCastTrigger->address) != acceptDataSize)
+                            {
+                                std::cout << "Failed to send accept message." << std::endl;
+                                break;
+                            }
+
+                            std::cout << "Sent accept packet." << std::endl;
+                        }
+                        else
+                        {
+
+                        }
+
+                    }
+                    break;
+                    case Core::Trigger::OnPeerConnect:
+                    {
+                    }
+                    break;
+                    case Core::Trigger::OnPeerDisconnect:
+                    {
+                    }
+                    break;
+                    default:
+                        break;
+                }
+
+                delete pTrigger;
+            }
+        });
+
 
         // Wait for all threads to start running.
         receiveThreadStarted.Wait();
         reliableThreadStarted.Wait();
         connectionThreadStarted.Wait();
+        triggerThreadStarted.Wait();
 
         m_Hosted = true;
     }
@@ -224,8 +327,10 @@ namespace Net
         m_ConnectionPacketSemaphore.NotifyOne();
         m_ConnectionThread.join();
 
+        m_TriggerSemaphore.NotifyOne();
+        m_TriggerThread.join();
 
-        m_ReceiveSocket.Close();
+        m_Socket.Close();
         m_Stopping = false;
     }
 

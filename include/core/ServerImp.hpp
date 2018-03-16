@@ -30,6 +30,7 @@
 #include <core/Semaphore.hpp>
 #include <core/Safe.hpp>
 #include <core/PacketPool.hpp>
+#include <core/Trigger.hpp>
 #include <Peer.hpp>
 #include <map>
 #include <queue>
@@ -60,19 +61,33 @@ namespace Net
             */
             void QueueConnectionPacket(Packet * packet);
 
+            /**
+            * @breif Add trigger to queue.
+            *
+            * @throw Exception if trigger is nullptr.
+            *
+            */
+            void AddTrigger(Trigger * trigger);
+
             std::atomic<bool>                   m_Hosted;                    ///< Is the server currently hosted?
             std::atomic<bool>                   m_Stopping;                  ///< Is the server currently stopping?
-            std::map<unsigned short, Peer *>    m_PeerMap;                   ///< Map of all connected peers.
+            //std::map<unsigned short, Peer *>    m_PeerMap;                   ///< Map of all connected peers.
             std::thread                         m_ReceiveThread;             ///< Thread for receiving packets.
             std::thread                         m_ReliableThread;            ///< Thread for handling reliable packets.
-            std::thread                         m_ConnectionThread;          ///< Thread for handling incoming and established connections.
+
+
             SocketSelector                      m_SocketSelector;            ///< Socket selector for receive socket.
-            UdpSocket                           m_ReceiveSocket;             ///< Socket for receiving data.
+            UdpSocket                           m_Socket;                    ///< Socket for receiving and sending data.
             PacketPool                          m_PacketPool;                ///< Pool of packets;
             std::mutex                          m_StopMutex;                 ///< Mutex for starting server.
 
+            std::thread                         m_ConnectionThread;          ///< Thread for handling incoming and established connections.
             Safe<std::queue<Packet *>>          m_ConnectionPacketQueue;     ///< Queue of connection packets.
-            Semaphore                           m_ConnectionPacketSemaphore; ///< Sempahore for triggering new connection thread.
+            Semaphore                           m_ConnectionPacketSemaphore; ///< Sempahore for triggering the connection thread.
+
+            std::thread                         m_TriggerThread;             ///< Thread handling all trigger functions.
+            Safe<std::queue<Trigger *>>         m_TriggerQueue;              ///< Queue of triggers.
+            Semaphore                           m_TriggerSemaphore;          ///< Sempahore for triggering the trigger thread.
 
             REALNET_TEST_FRIEND                 ///< Allow private tests.
         };

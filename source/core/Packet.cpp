@@ -32,21 +32,21 @@ namespace Net
     {
 
         Packet::Packet() :
-            Data(new unsigned char[MaxPacketSize]),
-            Size(0),
-            Sequence(0)
+            data(new unsigned char[MaxPacketSize]),
+            size(0),
+            sequence(0)
         {
         }
 
         Packet::~Packet()
         {
-            delete [] Data;
+            delete [] data;
         }
 
-        unsigned short SerializeSequenceNumber() const
+        void Packet::SerializeSequenceNumber()
         {
-            return (static_cast<unsigned short>(pBytes[3]) << 8) |
-                    static_cast<unsigned short>(pBytes[2]);
+            sequence =  REALNET_ENDIAN_16( (static_cast<unsigned short>(data[2]) << 8) |
+                                            static_cast<unsigned short>(data[1]));
 
         }
 

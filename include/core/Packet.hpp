@@ -50,7 +50,6 @@ namespace Net
             static const unsigned char LinkingType              = 0x04;
             static const unsigned char ReplicationType          = 0x05;
             static const unsigned char MessageType              = 0x06;
-            static const unsigned char TypeCount                = 0x07;  ///< Total number of packet types.
 
             /**
             * @breif Connection packet types.
@@ -59,7 +58,6 @@ namespace Net
             static const unsigned char ConnectionTypeInit       = 0x00;
             static const unsigned char ConnectionTypeAccept     = 0x01;
             static const unsigned char ConnectionTypeReject     = 0x02;
-            static const unsigned char ConnectionTypeCount      = 0x03; ///< Total number of connection packet types.
 
             /**
             * @breif Synchronization packet types.
@@ -67,7 +65,6 @@ namespace Net
             */
             static const unsigned char SynchronizationTypeInit  = 0x00;
             static const unsigned char SynchronizationTypeAck   = 0x01;
-            static const unsigned char SynchronizationTypeCount = 0x02;  ///< Total number of connection packet types.
 
 
             // The follow declarations are non-static members of the packet structure.
@@ -85,17 +82,17 @@ namespace Net
             ~Packet();
 
             /**
-            * @breif Serialize sequence number from packet data.
-            *        The internal sequence number wont be set.
+            * @breif Serialize sequence number from packet data
+            *        and sets the internal sequence number.
             *
             */
-            unsigned short SerializeSequenceNumber() const;
+            void SerializeSequenceNumber();
 
-            unsigned char * Data;           ///< Packet data.
-            size_t          Size;           ///< Size of packet. Not the number of allocated bytes.
-            unsigned short  Sequence;       ///< Sequence number of packet.
-            Time            ReceiveTime;    ///< Time of when the packet were received.
-            SocketAddress   Address;        ///< Socket address of packet.
+            unsigned char * data;           ///< Packet data.
+            size_t          size;           ///< Size of packet. Not the number of allocated bytes.
+            unsigned short  sequence;       ///< Sequence number of packet.
+            Time            receiveTime;    ///< Time of when the packet were received.
+            SocketAddress   address;        ///< Socket address of packet.
 
         private:
 

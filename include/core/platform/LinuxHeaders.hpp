@@ -33,6 +33,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <byteswap.h>
 
 #define closesocket close
 

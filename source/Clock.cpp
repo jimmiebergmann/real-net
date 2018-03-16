@@ -24,11 +24,7 @@
 */
 
 #include <Clock.hpp>
-#if defined(REALNET_PLATFORM_WINDOWS)
-    #include <core/platform/WindowsHeaders.hpp>
-#elif defined( REALNET_PLATFORM_LINUX )
-    #include <core/platform/LinuxHeaders.hpp>
-#endif
+
 
 namespace Net
 {

@@ -26,13 +26,20 @@
 #pragma once
 
 
-
-
 // Define platform
 #if defined( _WIN32 ) || defined( __WIN32__ ) || defined( _WIN64 ) || defined( __WIN64__ )
 	#define REALNET_PLATFORM_WINDOWS
+
+	#include <core/platform/WindowsHeaders.hpp>
 #elif defined(linux) || defined(__linux)
 	#define REALNET_PLATFORM_LINUX
+
+    #include <core/platform/LinuxHeaders.hpp>
+
+	#define REALNET_ENDIAN_16(x) ((1!=htonl(1)) ? (x) : bswap_16(x))
+    #define REALNET_ENDIAN_32(x) ((1!=htonl(1)) ? (x) : bswap_32(x))
+    #define REALNET_ENDIAN_64(x) ((1!=htonl(1)) ? (x) : bswap_64(x))
+
 #else
 	#error No platform defined.
 #endif
@@ -43,6 +50,7 @@
 #endif
 
 #include <Exception.hpp>
+
 
 namespace Net
 {

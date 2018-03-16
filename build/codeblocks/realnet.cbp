@@ -74,6 +74,7 @@
 		<Unit filename="../../include/core/ServerImp.hpp" />
 		<Unit filename="../../include/core/Socket.hpp" />
 		<Unit filename="../../include/core/SocketSelector.hpp" />
+		<Unit filename="../../include/core/Trigger.hpp" />
 		<Unit filename="../../include/core/UdpSocket.hpp" />
 		<Unit filename="../../include/core/VariableImp.hpp" />
 		<Unit filename="../../include/core/inline/EntityManagerImp.inl" />
@@ -103,6 +104,7 @@
 		<Unit filename="../../source/core/Semaphore.cpp" />
 		<Unit filename="../../source/core/ServerImp.cpp" />
 		<Unit filename="../../source/core/SocketSelector.cpp" />
+		<Unit filename="../../source/core/Trigger.cpp" />
 		<Unit filename="../../source/core/UdpSocket.cpp" />
 		<Unit filename="../../source/core/VariableImp.cpp" />
 		<Extensions>

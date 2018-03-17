@@ -34,23 +34,41 @@
 namespace Net
 {
 
+    class Server; ///< Forward declaration.
+
     namespace Core
     {
 
+        /**
+        * @breif Forward declarations.
+        *
+        */
+        class ServerImp;
         class PacketPool;
 
+        /**
+        * @breif Peer implementation class.
+        *
+        */
         class PeerImp
         {
 
         protected:
 
-            friend class PacketPool;
-
             /**
-            * @breif Constructor.
+            * @breif Friend classes.
             *
             */
-            PeerImp(const unsigned short id, const SocketAddress & socketAddress);
+            friend class Net::Server;
+            friend class ServerImp;
+            friend class PacketPool;
+
+            enum eState
+            {
+                Handshaking,
+                Connected,
+                Disconnecting
+            };
 
             /**
             * @breif Increment active packet counter.
@@ -59,7 +77,7 @@ namespace Net
             * @throw Exception  If passed packet's peer pointer is incorrect.
             *
             */
-            void AssignPacket(Packet * packet);
+            static void AttachPacket(Packet * packet, Peer * peer);
 
             /**
             * @breif Decrement active packet counter.
@@ -68,16 +86,19 @@ namespace Net
             * @throw Exception  If passed packet's peer pointer is incorrect.
             *
             */
-            void ReturnPacket(Packet * packet);
+            static void DetachPacket(Packet * packet);
+
+            /**
+            * @breif Constructor.
+            *
+            */
+            PeerImp(const unsigned short id, const SocketAddress & socketAddress);
 
             unsigned short      m_Id;               ///< Id of peer.
             SocketAddress       m_SocketAddress;    ///< Ip and port of peer.
 
-            std::atomic<size_t> m_ActivePackets;    ///< Peer packets in use. Cannot be deallocated if not equal to 0.
-            std::atomic<bool>   m_Disconnected;     ///< Flag for checking if peer is disconnected.
-                                                    ///< Will automatically be deallocated by connection thread of server,
-                                                    ///< when peer is places in cleanup queue and m_InUse = false.
-
+            Safe<size_t>        m_ActivePackets;    ///< Peer packets in use. Cannot be deallocated if not equal to 0.
+            std::atomic<eState> m_State;            ///< Current state of peer.
         };
 
     }

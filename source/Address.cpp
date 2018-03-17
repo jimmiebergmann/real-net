@@ -161,7 +161,6 @@ namespace Net
 
     void Address::SetZero()
     {
-        m_Type = Any;
         memset(m_Bytes, 0 , 16);
     }
 
@@ -237,6 +236,9 @@ namespace Net
 
     std::string Address::AsString() const
     {
+        /// Invalid!
+        /// http://www.gestioip.net/docu/ipv6_address_examples.html
+
         if(m_Type == Ipv4)
         {
             std::string ret = "";

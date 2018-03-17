@@ -71,6 +71,7 @@ namespace Net
             *
             */
             void Open(const unsigned short port, const Address::eType family = Address::Any);
+            void Open(const unsigned short port, const Address & address);
 
             /**
             * @breif Close open UDP socket.

@@ -482,18 +482,18 @@ namespace Net
     {
         {
             Net::Server server;
-            EXPECT_NO_THROW(server.Host(12312));
-            EXPECT_THROW(server.Host(12312), Net::Exception);
+            EXPECT_NO_THROW(server.Host(12312, 32));
+            EXPECT_THROW(server.Host(12312, 32), Net::Exception);
         }
         {
             Net::Server server_1;
             Net::Server server_2;
-            EXPECT_NO_THROW(server_1.Host(12312));
-            EXPECT_THROW(server_2.Host(12312), Net::SystemException);
+            EXPECT_NO_THROW(server_1.Host(12312, 32));
+            EXPECT_THROW(server_2.Host(12312, 32), Net::SystemException);
         }
         {
             Net::Server server;
-            EXPECT_NO_THROW(server.Host(12313));
+            EXPECT_NO_THROW(server.Host(12313, 32));
             std::this_thread::sleep_for(std::chrono::seconds(1));
             server.Stop();
         }

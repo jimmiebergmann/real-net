@@ -34,11 +34,40 @@ namespace Net
         ServerImp::ServerImp() :
             m_Hosted(false),
             m_Stopping(false),
+            m_LastPeerId(0),
             m_PacketPool(10),
             m_OnPeerPreConnect(nullptr),
             m_OnPeerConnect(nullptr),
             m_OnPeerDisconnect(nullptr)
         {
+        }
+
+        bool ServerImp::InternalDisconnectPeer(Peer * peer)
+        {
+            Core::SafeGuard sf_peers(m_PeersMutex);
+
+            auto idPeerIt = m_IdPeers.find(peer->m_Id);
+            auto addressPeerIt = m_AddressPeers.find(peer->m_SocketAddress);
+            if(idPeerIt != m_IdPeers.end() && addressPeerIt != m_AddressPeers.end())
+            {
+                peer->m_State = PeerImp::Disconnecting;
+                m_IdPeers.erase(idPeerIt);
+                m_AddressPeers.erase(addressPeerIt);
+            }
+            else if(idPeerIt == m_IdPeers.end() && addressPeerIt == m_AddressPeers.end())
+            {
+                return false;
+            }
+            else
+            {
+                throw Exception("Internal error. Peer maps are mismatching.");
+            }
+
+            m_PeerCleanup.Mutex.lock();
+            m_PeerCleanup.Value.insert(peer);
+            m_PeerCleanup.Mutex.unlock();
+
+            return true;
         }
 
         void ServerImp::QueueConnectionPacket(Packet * packet)
@@ -59,6 +88,23 @@ namespace Net
             Core::SafeGuard sf(m_TriggerQueue);
             m_TriggerQueue.Value.push(trigger);
             m_TriggerSemaphore.NotifyOne();
+        }
+
+        unsigned int ServerImp::GetNextPeerId()
+        {
+            while(1)
+            {
+                m_LastPeerId++;
+
+                auto it = m_IdPeers.find(m_LastPeerId);
+                if(it == m_IdPeers.end())
+                {
+                    return m_LastPeerId;
+                }
+            }
+
+            throw Exception("Should never reach end of GetNextPeerId().");
+            return 0;
         }
 
     }

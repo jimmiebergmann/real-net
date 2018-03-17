@@ -9,25 +9,25 @@ int RunServer()
     // Set triggers.
     server.SetOnPeerPreConnect([](Net::Peer & peer) -> bool
     {
-        std::cout << "Peer is trying to connect!" << std::endl;
+        std::cout << "Peer is trying to connect: " << peer.GetId() << std::endl;
 
         return true;
     });
     server.SetOnPeerConnect([](Net::Peer & peer)
     {
-        std::cout << "Peer Connected: " << peer.GetAddress().Ip.AsString() << "-" << peer.GetAddress().Port << std::endl;
+        std::cout << "Peer Connected: " << peer.GetId() << ". Address: " << peer.GetAddress().Ip.AsString() << "-" << peer.GetAddress().Port << std::endl;
 
         return true;
     });
     server.SetOnPeerDisconnect([](Net::Peer & peer)
     {
-        std::cout << "Peer Disconnect!" << std::endl;
+        std::cout << "Peer Disconnected: " << peer.GetId() << std::endl;
 
         return true;
     });
 
     // Start server.
-    server.Host(12345);
+    server.Host(12345, 32);
 
     std::cout << "Server is running." << std::endl;
     std::cout << "Enter any character to exit." << std::endl;

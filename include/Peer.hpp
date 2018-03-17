@@ -31,19 +31,20 @@
 namespace Net
 {
 
- //   namespace Core{ class PacketPool;} ///< Forward declaration.
-
     /**
     * @breif Peer class describing connecting peer to server.
     *
     */
-    class Peer : private Core::PeerImp
+    class Peer : public Core::PeerImp
     {
 
     public:
 
-        friend class Server;
-        //friend class Core::PacketPool;
+        /**
+        * @breif Constructor.
+        *
+        */
+        Peer(const unsigned short id, const SocketAddress & socketAddress);
 
         /**
         * @breif Get id of peer.
@@ -56,14 +57,6 @@ namespace Net
         *
         */
         const SocketAddress & GetAddress() const;
-
-    protected:
-
-        /**
-        * @breif Constructor.
-        *
-        */
-        Peer(const unsigned short id, const SocketAddress & socketAddress);
 
     };
 

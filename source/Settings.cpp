@@ -23,71 +23,38 @@
 *
 */
 
-#pragma once
-
-#include <Time.hpp>
-#include <Peer.hpp>
-
+#include <Settings.hpp>
 
 namespace Net
 {
 
-    namespace Core
+    Settings::Settings() :
+        port(0),
+        maxConnections(0),
+        host(Address::Zero),
+        timeout(Seconds(30))
     {
-        class Trigger
-        {
+    }
 
-        public:
+    Settings::Settings(const unsigned short   p_Port,
+                       const size_t           p_MaxConnections,
+                       const Address &        p_Host,
+                       const Time &           p_Timeout) :
+        port(p_Port),
+        maxConnections(p_MaxConnections),
+        host(p_Host),
+        timeout(p_Timeout)
+    {
+    }
 
-            enum eType
-            {
-                OnPeerPreConnect,
-                OnPeerConnect,
-                OnPeerDisconnect
-            };
-
-            Trigger(const eType type);
-            virtual ~Trigger();
-
-            eType type;
-
-        };
-
-        class OnPeerPreConnectTrigger : public Trigger
-        {
-
-        public:
-
-            OnPeerPreConnectTrigger(const bool newPeer, Peer * peer, const Time & receiveTime);
-
-            bool   newPeer;
-            Peer * peer;
-            Time   receiveTime;
-
-        };
-
-        class OnPeerConnectTrigger : public Trigger
-        {
-
-        public:
-
-            OnPeerConnectTrigger(Peer * peer);
-
-            Peer * peer;
-
-        };
-
-        class OnPeerDisconnectTrigger : public Trigger
-        {
-
-        public:
-
-            OnPeerDisconnectTrigger(Peer * peer);
-
-            Peer * peer;
-
-        };
+    Settings::Settings(const Address &        p_Host,
+                       const unsigned short   p_Port,
+                       const Time &           p_Timeout) :
+        port(p_Port),
+        maxConnections(0),
+        host(p_Host),
+        timeout(p_Timeout)
+    {
     }
 
 }
-

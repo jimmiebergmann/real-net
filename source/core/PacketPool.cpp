@@ -157,7 +157,7 @@ namespace Net
 
             if(packet->peer)
             {
-                reinterpret_cast<PeerImp*>(packet->peer)->ReturnPacket(packet);
+                Core::PeerImp::DetachPacket(packet);
             }
             packet->peer = nullptr;
 

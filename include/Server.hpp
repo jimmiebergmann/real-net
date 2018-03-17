@@ -39,7 +39,6 @@ namespace Net
 
     public:
 
-
         /**
         * @breif Constructor.
         *
@@ -55,22 +54,39 @@ namespace Net
         /**
         * @breif Host server. No action if server already is hosted.
         *
-        * @param port Hosting port.
-        * @param family Specify connection family. Ipv4/Ipv6/Any.
-        *               "Any" will allow both Ipv4 and Ipv6 connections.
+        *        Host(1) is the simply way of hosting the server.
+        *        Host(2) allows additional settings. port and maxConnections param will overload settings values.
+        *        Host(3) start server via settings.
+        *
+        * @param port               Hosting port.
+        * @param maxConnections     Maximum number of concurrent connections.
+        * @param settings           Passed server settings.
         *
         * @throw SystemException    If failing to create server port.
-        * @throw Exception          If calling Stop/Start in wrong order or
-        *                           if starting server while it's stopping.
+        * @throw Exception          If calling Host/Stop in wrong order or
+        *                           starting server while it's stopping.
         *
         */
-        void Host(const unsigned short port, Address::eType family = Address::Any);
+        void Host(const unsigned short port, const size_t maxConnections);
+        void Host(const unsigned short port, const size_t maxConnections, const Settings & settings);
+        void Host(const Settings & settings);
 
         /**
         * @breif Stop hosted server. No action if not hosted.
         *
         */
         void Stop();
+
+        /**
+        * @breif Disconnect peer.
+        *
+        * @param id ID of peer.
+        *
+        * @return true if peer currently is connected, else false.
+        *
+        */
+        bool DisconnectPeer(const unsigned int id);
+
 
         /**
         * @breif Set the "On peer pre connect" trigger. Overloads the virtual function.
@@ -96,6 +112,12 @@ namespace Net
         */
         void SetOnPeerDisconnect(const std::function<void(Peer & peer)> & function);
 
+        /**
+        * @breif Get current server settings.
+        *
+        */
+        const Settings & GetSettings() const;
+
     private:
 
         /**
@@ -115,9 +137,6 @@ namespace Net
         * @breif Trigger function called if peer disconnects.
         */
         virtual void OnPeerDisconnect(Peer & peer);
-
-
-        REALNET_TEST_FRIEND ///< Allow private tests.
 
     };
 

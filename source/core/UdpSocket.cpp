@@ -51,8 +51,14 @@ namespace Net
 
         void UdpSocket::Open(const unsigned short port, const Address::eType family)
         {
+            Open(port, Address(family));
+        }
+
+        void UdpSocket::Open(const unsigned short port, const Address & address)
+        {
             Close();
 
+            const Address::eType family = address.GetType();
             int domain = (family == Address::Ipv4 ? AF_INET : AF_INET6);
 
             // Create the socket
@@ -76,7 +82,7 @@ namespace Net
                 struct sockaddr_in6 service;
                 memset( &service, 0, sizeof(service));
                 service.sin6_family = AF_INET6;
-                service.sin6_addr = in6addr_any;
+                service.sin6_addr = in6addr_any; /// BUG. IT'S CURRENTLY NOT POSSIBLE TO BIND TO ADDRESS.
                 service.sin6_port = htons(port);
 
                 // Bind the socket
@@ -95,7 +101,7 @@ namespace Net
                 struct sockaddr_in service;
                 memset( &service, 0, sizeof(service));
                 service.sin_family = domain;
-                service.sin_addr.s_addr = htonl(INADDR_ANY);
+                service.sin_addr.s_addr = htonl(INADDR_ANY); /// BUG. IT'S CURRENTLY NOT POSSIBLE TO BIND TO ADDRESS.
                 service.sin_port = htons(port);
 
                 // Bind the socket
@@ -105,7 +111,7 @@ namespace Net
                     throw SystemException("Failed to bind socket to port " + std::to_string(port) +  ".", GetLastSystemError());
                 }
 
-                m_Family = Address::Ipv6;
+                m_Family = Address::Ipv4;
             }
 
             m_SocketAddress.Ip = Address::Loopback(m_Family);

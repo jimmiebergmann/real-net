@@ -40,9 +40,10 @@ namespace Net
         {
         }
 
-        OnPeerPreConnectTrigger::OnPeerPreConnectTrigger(const SocketAddress & p_address, const Time & p_receiveTime) :
+        OnPeerPreConnectTrigger::OnPeerPreConnectTrigger(const bool p_NewPeer, Peer * p_Peer, const Time & p_receiveTime) :
             Trigger(OnPeerPreConnect),
-            address(p_address),
+            newPeer(p_NewPeer),
+            peer(p_Peer),
             receiveTime(p_receiveTime)
         {
         }

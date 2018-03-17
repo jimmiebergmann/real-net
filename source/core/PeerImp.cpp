@@ -24,6 +24,7 @@
 */
 
 #include <core/PeerImp.hpp>
+#include <Peer.hpp>
 
 namespace Net
 {
@@ -35,34 +36,42 @@ namespace Net
             m_Id(id),
             m_SocketAddress(socketAddress),
             m_ActivePackets(0),
-            m_Disconnected(false)
+            m_State(eState::Handshaking)
         {
         }
 
-        void PeerImp::AssignPacket(Packet * packet)
+        void PeerImp::AttachPacket(Packet * packet, Peer * peer)
         {
-            if(packet == nullptr || reinterpret_cast<PeerImp*>(packet->peer) != this)
+            if(packet->peer != nullptr)
             {
-                throw Exception("Cannot assign packet to peer. Packet == nullptr, or packet's peer is incorrect.");
+                throw Exception("Cannot assign packet to peer. Packet is already assigned.");
             }
 
-            m_ActivePackets++;
+            packet->peer = peer;
+
+            Core::SafeGuard sf(peer->m_ActivePackets);
+
+            peer->m_ActivePackets.Value++;
         }
 
 
-        void PeerImp::ReturnPacket(Packet * packet)
+        void PeerImp::DetachPacket(Packet * packet)
         {
-            if(packet == nullptr || reinterpret_cast<PeerImp*>(packet->peer) != this)
+            Peer * pPeer = nullptr;
+            if((pPeer = packet->peer) == nullptr)
             {
-                throw Exception("Cannot return packet to peer. Packet == nullptr, or packet's peer is incorrect.");
+                throw Exception("Cannot return packet to peer. Packet is not yet attached.");
             }
 
-            if(m_ActivePackets == 0)
+            Core::SafeGuard sf(pPeer->m_ActivePackets);
+
+            if(pPeer->m_ActivePackets.Value == 0)
             {
                 throw Exception("Cannot return packet to peer if m_ActivePackets == 0.");
             }
 
-            m_ActivePackets--;
+            pPeer->m_ActivePackets.Value--;
         }
+
     }
 }

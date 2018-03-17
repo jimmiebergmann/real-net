@@ -61,6 +61,7 @@
 		<Unit filename="../../include/MessageListener.hpp" />
 		<Unit filename="../../include/Peer.hpp" />
 		<Unit filename="../../include/Server.hpp" />
+		<Unit filename="../../include/Settings.hpp" />
 		<Unit filename="../../include/Time.hpp" />
 		<Unit filename="../../include/Variable.hpp" />
 		<Unit filename="../../include/core/Build.hpp" />
@@ -94,6 +95,7 @@
 		<Unit filename="../../source/MessageListener.cpp" />
 		<Unit filename="../../source/Peer.cpp" />
 		<Unit filename="../../source/Server.cpp" />
+		<Unit filename="../../source/Settings.cpp" />
 		<Unit filename="../../source/Time.cpp" />
 		<Unit filename="../../source/Variable.cpp" />
 		<Unit filename="../../source/core/Build.cpp" />

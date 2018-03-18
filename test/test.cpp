@@ -19,6 +19,7 @@
 #include <core/SocketSelector.hpp>
 #include <core/Md5.hpp>
 #include <core/PacketPool.hpp>
+#include <core/Latency.hpp>
 
 
 #define GTEST_PRINT "\033[0;32m" << "[          ] " << "\033[0;0m"
@@ -189,6 +190,108 @@ namespace Net
                 EXPECT_NE(pool.Get(), nullptr);
             }
         }
+    }
+
+    TEST(Latency, sample_count)
+    {
+        Net::Core::Latency latency_1(0);
+        EXPECT_EQ(latency_1.GetSampleCount(), 1);
+
+        Net::Core::Latency latency_2(1);
+        EXPECT_EQ(latency_2.GetSampleCount(), 1);
+
+        Net::Core::Latency latency_3(2);
+        EXPECT_EQ(latency_3.GetSampleCount(), 2);
+    }
+
+    TEST(Latency, count)
+    {
+        Net::Core::Latency latency(3);
+        EXPECT_EQ(latency.GetSampleCount(), 3);
+
+        EXPECT_EQ(latency.GetCount(), 0);
+        latency.Add(Net::Seconds(1.0f));
+        EXPECT_EQ(latency.GetCount(), 1);
+        latency.Add(Net::Seconds(2.0f));
+        EXPECT_EQ(latency.GetCount(), 2);
+        latency.Add(Net::Seconds(3.0f));
+        EXPECT_EQ(latency.GetCount(), 3);
+        latency.Add(Net::Seconds(4.0f));
+        EXPECT_EQ(latency.GetCount(), 3);
+    }
+
+    TEST(Latency, median)
+    {
+        // 3 items
+        {
+            Net::Core::Latency latency(3);
+            Net::Time time;
+
+            latency.Add(Net::Microseconds(2));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 2);
+
+            latency.Add(Net::Microseconds(4));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 3);
+
+            latency.Add(Net::Microseconds(6));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 4);
+
+            latency.Add(Net::Microseconds(7));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 6);
+
+            latency.Add(Net::Microseconds(1));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 6);
+
+            latency.Add(Net::Microseconds(10));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 7);
+
+            latency.Add(Net::Microseconds(5));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 5);
+        }
+
+        // 4 items
+        {
+            Net::Core::Latency latency(4);
+            Net::Time time;
+
+            latency.Add(Net::Microseconds(2));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 2);
+
+            latency.Add(Net::Microseconds(4));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 3);
+
+            latency.Add(Net::Microseconds(6));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 4);
+
+            latency.Add(Net::Microseconds(7));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 5);
+
+            latency.Add(Net::Microseconds(10));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 6);
+
+            latency.Add(Net::Microseconds(5));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 6);
+
+            latency.Add(Net::Microseconds(10));
+            latency.Get(time);
+            EXPECT_EQ(time.AsMicroseconds(), 8);
+
+        }
+
+
     }
 
     TEST(Address, tests)

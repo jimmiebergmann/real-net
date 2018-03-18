@@ -28,6 +28,7 @@
 #include <core/Build.hpp>
 #include <core/Safe.hpp>
 #include <core/Packet.hpp>
+#include <core/Latency.hpp>
 #include <Address.hpp>
 #include <atomic>
 
@@ -63,12 +64,26 @@ namespace Net
             friend class ServerImp;
             friend class PacketPool;
 
+            /**
+            * @breif Enumerator of current status of peer.
+            *
+            */
             enum eState
             {
                 Handshaking,
+                Accepted,
                 Connected,
                 Disconnecting
             };
+
+            /**
+            * @breif Add current latency of peer.
+            *
+            * @param latency    Current round-trip delay time of peer.
+            * @param maxCount   Maximum number of latencies to stack.
+            *
+            */
+            void AddCurrentLatency(const Time & latency, const size_t maxCount);
 
             /**
             * @breif Increment active packet counter.
@@ -92,13 +107,14 @@ namespace Net
             * @breif Constructor.
             *
             */
-            PeerImp(const unsigned short id, const SocketAddress & socketAddress);
+            PeerImp(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples);
 
             unsigned short      m_Id;               ///< Id of peer.
             SocketAddress       m_SocketAddress;    ///< Ip and port of peer.
-
             Safe<size_t>        m_ActivePackets;    ///< Peer packets in use. Cannot be deallocated if not equal to 0.
             std::atomic<eState> m_State;            ///< Current state of peer.
+            Time                m_AcceptTime;       ///< System time of when the peer were accepted.
+            Core::Latency       m_Latency;          ///< Latency calculator.
         };
 
     }

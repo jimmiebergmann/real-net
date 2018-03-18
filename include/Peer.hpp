@@ -44,7 +44,7 @@ namespace Net
         * @breif Constructor.
         *
         */
-        Peer(const unsigned short id, const SocketAddress & socketAddress);
+        Peer(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples);
 
         /**
         * @breif Get id of peer.
@@ -57,6 +57,12 @@ namespace Net
         *
         */
         const SocketAddress & GetAddress() const;
+
+        /**
+        * @breif Get latency of peer.
+        *
+        */
+        Time GetLatency() const;
 
     };
 

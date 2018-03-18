@@ -58,9 +58,8 @@ namespace Net
 
         public:
 
-            OnPeerPreConnectTrigger(const bool newPeer, Peer * peer, const Time & receiveTime);
+            OnPeerPreConnectTrigger(Peer * peer, const Time & receiveTime);
 
-            bool   newPeer;
             Peer * peer;
             Time   receiveTime;
 
@@ -73,7 +72,7 @@ namespace Net
 
             OnPeerConnectTrigger(Peer * peer);
 
-            Peer * peer;
+            Peer *  peer;
 
         };
 

@@ -124,24 +124,18 @@ namespace Net
                     if(peerIt != m_AddressPeers.end())
                     {
                         pPeer = peerIt->second;
-                        Core::PeerImp::AttachPacket(pPacket, pPeer);
                     }
 
-                    if(pPeer == nullptr)
+                    // New peers or not yet connected peers are only allowed to send connection packets.
+                    if((pPeer == nullptr || pPeer->m_State != Core::PeerImp::Connected) && packetType != Core::Packet::ConnectionType)
                     {
-                        // Completely new peers are only allowed to send connection packets.
-                        if(packetType != Core::Packet::ConnectionType)
-                        {
-                            continue;
-                        }
+
+                        continue;
                     }
-                    else if(pPeer->m_State == Core::PeerImp::Handshaking)
+
+                    if(pPeer)
                     {
-                        // Handshaking peers are only allowed to send connection and disconnection packets.
-                        if(packetType != Core::Packet::ConnectionType && packetType != Core::Packet::DisconnectionType)
-                        {
-                            continue;
-                        }
+                        Core::PeerImp::AttachPacket(pPacket, pPeer);
                     }
                 }
 
@@ -191,13 +185,23 @@ namespace Net
         m_ConnectionThread = std::thread([this, &connectionThreadStarted]()
         {
             // Pre-allocated respones.
+            static const size_t acceptReponseSize = 20;
+            static const size_t rejectResponseSize = 5;
             static const size_t fullReponseSize = 5;
+            static const size_t ackReponseSize = 3;
+            static unsigned char acceptReponse[acceptReponseSize] =
+            {
+                Core::Packet::ConnectionType, 0, 0, Core::Packet::ConnectionTypeAccept,
+                0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0
+            };
+            static unsigned char rejectResponse[rejectResponseSize] =
+            {
+                Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeKicked
+            };
             static unsigned char fullReponse[fullReponseSize] =
             {
-                 Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeFull
+                 Core::Packet::ConnectionType, 0, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeFull
             };
-
-            static const size_t ackReponseSize = 3;
             static unsigned char ackReponse[ackReponseSize] =
             {
                  Core::Packet::AcknowledgementType, 0, 0
@@ -209,7 +213,7 @@ namespace Net
 
             while(m_Stopping == false)
             {
-                m_ConnectionPacketSemaphore.WaitFor(waitTime);
+                m_ConnectionThreadSemaphore.WaitFor(waitTime);
 
                 if(m_Stopping)
                 {
@@ -253,10 +257,23 @@ namespace Net
                                         break;
                                     }
 
-                                    const bool newPeer = pPeer == nullptr;
+                                    // Send accpet packet, since it's already been accepted.
+                                    if(pPeer && (pPeer->m_State == Core::PeerImp::Accepted || pPeer->m_State == Core::PeerImp::Connected))
+                                    {
+                                        const unsigned long long receiveTime = REALNET_ENDIAN_64(pPacket->receiveTime.AsMicroseconds());
+                                        memcpy(acceptReponse + 4, &receiveTime, 8);
+                                        const unsigned long long sendTime = REALNET_ENDIAN_64(Clock::GetSystemTime().AsMicroseconds());
+                                        memcpy(acceptReponse + 12, &sendTime, 8);
 
-                                    // Check if server is full
-                                    if(pPeer == nullptr)
+                                        if(m_Socket.Send(acceptReponse, acceptReponseSize, pPeer->GetAddress()) != acceptReponseSize)
+                                        {
+                                            std::cout << "Failed to send accept message." << std::endl;
+                                            InternalDisconnectPeer(pPeer);
+                                            break;
+                                        }
+                                    }
+                                    // New connection.
+                                    else
                                     {
                                         Core::SafeGuard sf_peers(m_PeersMutex);
 
@@ -274,13 +291,91 @@ namespace Net
                                         {
                                             const unsigned int peerId = GetNextPeerId();
 
-                                            pPeer = new Peer(peerId, pPacket->address);
+                                            pPeer = new Peer(peerId, pPacket->address, m_Settings.latencySamples);
+                                            Core::PeerImp::AttachPacket(pPacket, pPeer);
                                             m_IdPeers.insert({peerId, pPeer});
                                             m_AddressPeers.insert({pPacket->address, pPeer});
                                         }
+
+                                        AddTrigger(new Core::OnPeerPreConnectTrigger(pPeer, pPacket->receiveTime));
+                                    }
+                                }
+                                break;
+                                case Core::Packet::ConnectionTypeAccept:
+                                {
+                                    if(pPacket->size != 20 || pPeer == nullptr || pPacket->sequence != 1)
+                                    {
+                                        break;
                                     }
 
-                                    AddTrigger(new Core::OnPeerPreConnectTrigger(newPeer, pPeer, pPacket->receiveTime));
+                                    if(pPeer->m_State == Core::PeerImp::Connected)
+                                    {
+                                        // Send ack.
+                                        ackReponse[1] = 1;
+                                        ackReponse[2] = 0;
+                                        if(m_Socket.Send(ackReponse, ackReponseSize, pPacket->address) != ackReponseSize)
+                                        {
+                                            std::cout << "Failed to send acknowledgement message." << std::endl;
+                                            break;
+                                        }
+                                    }
+                                    else if(pPeer->m_State == Core::PeerImp::Accepted)
+                                    {
+                                        // Caluclate initial latency.
+                                        const Time serverDelay = pPacket->receiveTime - pPeer->m_AcceptTime;
+
+                                        unsigned long long tempPeerTime = 0;
+                                        memcpy(&tempPeerTime, pPacket->data + 4, 8);
+                                        tempPeerTime = REALNET_ENDIAN_64(tempPeerTime);
+
+                                        unsigned long long tempPeerDelay = 0;
+                                        memcpy(&tempPeerDelay, pPacket->data + 12, 8);
+                                        tempPeerDelay = REALNET_ENDIAN_64(tempPeerDelay);
+
+                                        const Time peerDelay = Microseconds(tempPeerDelay);
+
+                                        // Incorrect delay from peer.
+                                        if(peerDelay > serverDelay)
+                                        {
+                                            if(m_Socket.Send(rejectResponse, rejectResponseSize, pPeer->m_SocketAddress) != rejectResponseSize)
+                                            {
+                                                std::cout << "Failed to send reject message." << std::endl;
+                                            }
+
+                                            // Disconnect peer.
+                                            InternalDisconnectPeer(pPeer);
+                                            break;
+                                        }
+                                        std::cout << "Server delay: " << serverDelay.AsMicroseconds() << std::endl;
+                                        std::cout << "Peer delay:   " << peerDelay.AsMicroseconds() << std::endl;
+
+                                        const Time latency = serverDelay - peerDelay;
+                                        pPeer->m_Latency.Add(latency);
+
+                                        // Peer is now connected.
+                                        pPeer->m_State = Core::PeerImp::Connected;
+                                        AddTrigger(new Core::OnPeerConnectTrigger(pPeer));
+                                    }
+                                }
+                                break;
+                                case Core::Packet::ConnectionTypeReject:
+                                {
+                                    if(pPacket->size != 4 || pPeer == nullptr || pPeer->m_State != Core::PeerImp::Accepted || pPacket->sequence != 1)
+                                    {
+                                        break;
+                                    }
+
+                                    // Send ack.
+                                    ackReponse[1] = 1;
+                                    ackReponse[2] = 0;
+                                    if(m_Socket.Send(ackReponse, ackReponseSize, pPacket->address) != ackReponseSize)
+                                    {
+                                        std::cout << "Failed to send acknowledgement message." << std::endl;
+                                        break;
+                                    }
+
+                                    // Add disconnection trigger.
+                                    AddTrigger(new Core::OnPeerDisconnectTrigger(pPeer));
                                 }
                                 break;
                                 default:
@@ -296,17 +391,14 @@ namespace Net
                                 break;
                             }
 
-                            // Disconnect peer.
-                            InternalDisconnectPeer(pPeer);
-
                             // Send ack.
                             const unsigned short sequence = REALNET_ENDIAN_16(pPacket->sequence);
                             memcpy(ackReponse + 1, &sequence, 2);
                             if(m_Socket.Send(ackReponse, ackReponseSize, pPacket->address) != ackReponseSize)
                             {
                                 std::cout << "Failed to send acknowledgement message." << std::endl;
+                                break;
                             }
-                            break;
 
                             // Add disconnection trigger.
                             if(pPeer)
@@ -360,8 +452,6 @@ namespace Net
                                 }
                             }
 
-                            std::cout << "Cleaned up peer:" << pPeer->GetId() << std::endl;
-
                             delete pPeer;
                             it = m_PeerCleanup.Value.erase(it);
                         }
@@ -381,15 +471,14 @@ namespace Net
         Core::Semaphore triggerThreadStarted;
         m_TriggerThread = std::thread([this, &triggerThreadStarted]()
         {
-            // Pre-allocated connection respones.
+            // Pre-allocated respones.
             static const size_t acceptReponseSize = 20;
+            static const size_t rejectResponseSize = 5;
             static unsigned char acceptReponse[acceptReponseSize] =
             {
-                Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeAccept,
+                Core::Packet::ConnectionType, 0, 0, Core::Packet::ConnectionTypeAccept,
                 0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0
             };
-
-            static const size_t rejectResponseSize = 5;
             static unsigned char rejectResponse[rejectResponseSize] =
             {
                 Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeKicked
@@ -400,7 +489,7 @@ namespace Net
 
             while(m_Stopping == false)
             {
-                m_TriggerSemaphore.Wait();
+                m_TriggerThreadSemaphore.Wait();
 
                 if(m_Stopping)
                 {
@@ -426,34 +515,33 @@ namespace Net
                     case Core::Trigger::OnPeerPreConnect:
                     {
                         Core::OnPeerPreConnectTrigger * pCastTrigger = static_cast<Core::OnPeerPreConnectTrigger *>(pTrigger);
-
-                        const bool newPeer = pCastTrigger->newPeer;
                         Peer * pPeer = pCastTrigger->peer;
-                        const SocketAddress & socketAddress = pPeer->GetAddress();
 
                         // Call trigger
-                        bool acceptPeer = newPeer == false;
-                        if(newPeer)
+                        bool acceptPeer = false;
+                        if(m_OnPeerPreConnect)
                         {
-                            if(m_OnPeerPreConnect)
-                            {
-                                acceptPeer = m_OnPeerPreConnect(*pPeer);
-                            }
-                            else
-                            {
-                                acceptPeer = OnPeerPreConnect(*pPeer);
-                            }
+                            acceptPeer = m_OnPeerPreConnect(*pPeer);
+                        }
+                        else
+                        {
+                            acceptPeer = OnPeerPreConnect(*pPeer);
                         }
 
                         if(acceptPeer)
                         {
+                            pPeer->m_State = Core::PeerImp::Accepted;
+
                             // Send accpet packet.
                             const unsigned long long receiveTime = REALNET_ENDIAN_64(pCastTrigger->receiveTime.AsMicroseconds());
                             memcpy(acceptReponse + 4, &receiveTime, 8);
-                            const unsigned long long sendTime = REALNET_ENDIAN_64(Clock::GetSystemTime().AsMicroseconds());
+
+                            pPeer->m_AcceptTime = Clock::GetSystemTime();
+
+                            const unsigned long long sendTime = REALNET_ENDIAN_64(pPeer->m_AcceptTime.AsMicroseconds());
                             memcpy(acceptReponse + 12, &sendTime, 8);
 
-                            if(m_Socket.Send(acceptReponse, acceptReponseSize, socketAddress) != acceptReponseSize)
+                            if(m_Socket.Send(acceptReponse, acceptReponseSize, pPeer->m_SocketAddress) != acceptReponseSize)
                             {
                                 InternalDisconnectPeer(pPeer);
                                 std::cout << "Failed to send accept message." << std::endl;
@@ -463,7 +551,7 @@ namespace Net
                         else
                         {
                             // Send reject packet.
-                            if(m_Socket.Send(rejectResponse, rejectResponseSize, socketAddress) != rejectResponseSize)
+                            if(m_Socket.Send(rejectResponse, rejectResponseSize, pPeer->m_SocketAddress) != rejectResponseSize)
                             {
                                 std::cout << "Failed to send reject message." << std::endl;
                             }
@@ -477,29 +565,38 @@ namespace Net
                     case Core::Trigger::OnPeerConnect:
                     {
                         Core::OnPeerConnectTrigger * pCastTrigger = static_cast<Core::OnPeerConnectTrigger *>(pTrigger);
+                        Peer * pPeer = pCastTrigger->peer;
 
+                        // Call trigger function
                         if(m_OnPeerConnect)
                         {
-                            m_OnPeerConnect(*pCastTrigger->peer);
+                            m_OnPeerConnect(*pPeer);
                         }
                         else
                         {
-                            OnPeerConnect(*pCastTrigger->peer);
+                            OnPeerConnect(*pPeer);
                         }
                     }
                     break;
                     case Core::Trigger::OnPeerDisconnect:
                     {
                         Core::OnPeerDisconnectTrigger * pCastTrigger = static_cast<Core::OnPeerDisconnectTrigger *>(pTrigger);
+                        Peer * pPeer = pCastTrigger->peer;
 
-                        if(m_OnPeerDisconnect)
+                        if(pPeer->m_State == Core::PeerImp::Connected)
                         {
-                            m_OnPeerDisconnect(*pCastTrigger->peer);
+                            if(m_OnPeerDisconnect)
+                            {
+                                m_OnPeerDisconnect(*pPeer);
+                            }
+                            else
+                            {
+                                OnPeerDisconnect(*pPeer);
+                            }
                         }
-                        else
-                        {
-                            OnPeerDisconnect(*pCastTrigger->peer);
-                        }
+
+                        // Disconnect peer.
+                        InternalDisconnectPeer(pPeer);
                     }
                     break;
                     default:
@@ -538,10 +635,10 @@ namespace Net
 
         m_ReliableThread.join();
 
-        m_ConnectionPacketSemaphore.NotifyOne();
+        m_ConnectionThreadSemaphore.NotifyOne();
         m_ConnectionThread.join();
 
-        m_TriggerSemaphore.NotifyOne();
+        m_TriggerThreadSemaphore.NotifyOne();
         m_TriggerThread.join();
 
         // Disconnect peers

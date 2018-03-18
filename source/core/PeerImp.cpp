@@ -32,11 +32,16 @@ namespace Net
     namespace Core
     {
 
-        PeerImp::PeerImp(const unsigned short id, const SocketAddress & socketAddress) :
+        PeerImp::PeerImp(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples) :
             m_Id(id),
             m_SocketAddress(socketAddress),
             m_ActivePackets(0),
-            m_State(eState::Handshaking)
+            m_State(eState::Handshaking),
+            m_Latency(latencySamples)
+        {
+        }
+
+        void PeerImp::AddCurrentLatency(const Time & latency, const size_t maxCount)
         {
         }
 

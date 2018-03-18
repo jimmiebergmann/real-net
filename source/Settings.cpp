@@ -32,28 +32,33 @@ namespace Net
         port(0),
         maxConnections(0),
         host(Address::Zero),
-        timeout(Seconds(30))
+        timeout(Seconds(30)),
+        latencySamples(7)
     {
     }
 
     Settings::Settings(const unsigned short   p_Port,
                        const size_t           p_MaxConnections,
                        const Address &        p_Host,
-                       const Time &           p_Timeout) :
+                       const Time &           p_Timeout,
+                       const size_t           p_LatencySamples) :
         port(p_Port),
         maxConnections(p_MaxConnections),
         host(p_Host),
-        timeout(p_Timeout)
+        timeout(p_Timeout),
+        latencySamples(p_LatencySamples)
     {
     }
 
     Settings::Settings(const Address &        p_Host,
                        const unsigned short   p_Port,
-                       const Time &           p_Timeout) :
+                       const Time &           p_Timeout,
+                       const size_t           p_LatencySamples) :
         port(p_Port),
         maxConnections(0),
         host(p_Host),
-        timeout(p_Timeout)
+        timeout(p_Timeout),
+        latencySamples(p_LatencySamples)
     {
     }
 

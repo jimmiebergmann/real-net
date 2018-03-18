@@ -28,8 +28,8 @@
 namespace Net
 {
 
-    Peer::Peer(const unsigned short id, const SocketAddress & socketAddress) :
-        PeerImp(id, socketAddress)
+    Peer::Peer(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples) :
+        PeerImp(id, socketAddress, latencySamples)
     {
     }
 
@@ -41,6 +41,13 @@ namespace Net
     const SocketAddress & Peer::GetAddress() const
     {
         return m_SocketAddress;
+    }
+
+    Time Peer::GetLatency() const
+    {
+        Time time;
+        m_Latency.Get(time);
+        return time;
     }
 
 }

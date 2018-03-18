@@ -67,6 +67,7 @@
 		<Unit filename="../../include/core/Build.hpp" />
 		<Unit filename="../../include/core/DefaultLog.hpp" />
 		<Unit filename="../../include/core/EntityManagerImp.hpp" />
+		<Unit filename="../../include/core/Latency.hpp" />
 		<Unit filename="../../include/core/Md5.hpp" />
 		<Unit filename="../../include/core/Packet.hpp" />
 		<Unit filename="../../include/core/PacketPool.hpp" />
@@ -101,6 +102,7 @@
 		<Unit filename="../../source/core/Build.cpp" />
 		<Unit filename="../../source/core/DefaultLog.cpp" />
 		<Unit filename="../../source/core/EntityManagerImp.cpp" />
+		<Unit filename="../../source/core/Latency.cpp" />
 		<Unit filename="../../source/core/Md5.cpp" />
 		<Unit filename="../../source/core/Packet.cpp" />
 		<Unit filename="../../source/core/PacketPool.cpp" />

@@ -16,7 +16,7 @@ int RunServer()
     server.SetOnPeerConnect([](Net::Peer & peer)
     {
         std::cout << "Peer Connected: " << peer.GetId() << ". Address: " << peer.GetAddress().Ip.AsString() << "-" << peer.GetAddress().Port << std::endl;
-
+        std::cout << "Latency: " << peer.GetLatency().AsMicroseconds() << std::endl;
         return true;
     });
     server.SetOnPeerDisconnect([](Net::Peer & peer)

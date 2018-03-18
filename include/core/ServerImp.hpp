@@ -101,12 +101,12 @@ namespace Net
             PacketPool                          m_PacketPool;                ///< Pool of packets
 
             std::thread                         m_ConnectionThread;          ///< Thread for handling incoming and established connections.
+            Semaphore                           m_ConnectionThreadSemaphore; ///< Sempahore for triggering the connection thread.
             Safe<std::queue<Packet *>>          m_ConnectionPacketQueue;     ///< Queue of connection packets.
-            Semaphore                           m_ConnectionPacketSemaphore; ///< Sempahore for triggering the connection thread.
 
             std::thread                         m_TriggerThread;             ///< Thread handling all trigger functions.
+            Semaphore                           m_TriggerThreadSemaphore;          ///< Sempahore for triggering the trigger thread.
             Safe<std::queue<Trigger *>>         m_TriggerQueue;              ///< Queue of triggers.
-            Semaphore                           m_TriggerSemaphore;          ///< Sempahore for triggering the trigger thread.
             std::function<bool(Peer & peer)>    m_OnPeerPreConnect;
             std::function<void(Peer & peer)>    m_OnPeerConnect;
             std::function<void(Peer & peer)>    m_OnPeerDisconnect;

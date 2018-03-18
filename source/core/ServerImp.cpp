@@ -67,6 +67,8 @@ namespace Net
             m_PeerCleanup.Value.insert(peer);
             m_PeerCleanup.Mutex.unlock();
 
+            m_ConnectionThreadSemaphore.NotifyOne();
+
             return true;
         }
 
@@ -75,7 +77,7 @@ namespace Net
             Core::SafeGuard sf(m_ConnectionPacketQueue);
 
             m_ConnectionPacketQueue.Value.push(packet);
-            m_ConnectionPacketSemaphore.NotifyOne();
+            m_ConnectionThreadSemaphore.NotifyOne();
         }
 
         void ServerImp::AddTrigger(Trigger * trigger)
@@ -87,7 +89,7 @@ namespace Net
 
             Core::SafeGuard sf(m_TriggerQueue);
             m_TriggerQueue.Value.push(trigger);
-            m_TriggerSemaphore.NotifyOne();
+            m_TriggerThreadSemaphore.NotifyOne();
         }
 
         unsigned int ServerImp::GetNextPeerId()

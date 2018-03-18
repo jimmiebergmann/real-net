@@ -46,6 +46,7 @@ namespace Net
         */
         class ServerImp;
         class PacketPool;
+        class PeerTrigger;
 
         /**
         * @breif Peer implementation class.
@@ -63,6 +64,7 @@ namespace Net
             friend class Net::Server;
             friend class ServerImp;
             friend class PacketPool;
+            friend class PeerTrigger;
 
             /**
             * @breif Enumerator of current status of peer.
@@ -80,13 +82,24 @@ namespace Net
             * @breif Add current latency of peer.
             *
             * @param latency    Current round-trip delay time of peer.
-            * @param maxCount   Maximum number of latencies to stack.
             *
             */
-            void AddCurrentLatency(const Time & latency, const size_t maxCount);
+            void AddCurrentLatency(const Time & latency);
 
             /**
-            * @breif Increment active packet counter.
+            * @breif Increment activity counter.
+            *
+            */
+            void IncreaseActivity();
+
+            /**
+            * @breif Decrement activity counter.
+            *
+            */
+            void DecreaseActivity();
+
+            /**
+            * @breif Increment activity counter.
             *        The packet is passed, but not stored, only for error checking.
             *
             * @throw Exception  If passed packet's peer pointer is incorrect.
@@ -95,7 +108,7 @@ namespace Net
             static void AttachPacket(Packet * packet, Peer * peer);
 
             /**
-            * @breif Decrement active packet counter.
+            * @breif Decrement activity counter.
             *        The packet is passed, but not stored, only for error checking.
             *
             * @throw Exception  If passed packet's peer pointer is incorrect.
@@ -109,12 +122,12 @@ namespace Net
             */
             PeerImp(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples);
 
-            unsigned short      m_Id;               ///< Id of peer.
-            SocketAddress       m_SocketAddress;    ///< Ip and port of peer.
-            Safe<size_t>        m_ActivePackets;    ///< Peer packets in use. Cannot be deallocated if not equal to 0.
-            std::atomic<eState> m_State;            ///< Current state of peer.
-            Time                m_AcceptTime;       ///< System time of when the peer were accepted.
-            Core::Latency       m_Latency;          ///< Latency calculator.
+            const unsigned short    m_Id;               ///< Id of peer.
+            const SocketAddress     m_SocketAddress;    ///< Ip and port of peer.
+            Safe<size_t>            m_Activity;         ///< Peer activity. Cannot cleanup until 0.
+            std::atomic<eState>     m_State;            ///< Current state of peer.
+            Time                    m_AcceptTime;       ///< System time of when the peer were accepted.
+            Core::Latency           m_Latency;          ///< Latency calculator.
         };
 
     }

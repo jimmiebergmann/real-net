@@ -77,10 +77,10 @@ namespace Net
 
         private:
 
-            std::vector<Time>   m_Latencies;    ///< Vector of all latencies, used for calculating median.
-            const size_t        m_MaxSize;      ///< Maximum number of latencies for calulating.
-            std::atomic<Time>   m_Median;       ///< Current median.
-            size_t              m_ReplacePos;   ///< Position of current latency to replace.
+            std::vector<Time>               m_Latencies;    ///< Vector of all latencies, used for calculating median.
+            const size_t                    m_MaxSize;      ///< Maximum number of latencies for calulating.
+            std::atomic<unsigned long long> m_Median;       ///< Current median.
+            size_t                          m_ReplacePos;   ///< Position of current latency to replace.
 
         };
 

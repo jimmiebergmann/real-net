@@ -290,8 +290,6 @@ namespace Net
             EXPECT_EQ(time.AsMicroseconds(), 8);
 
         }
-
-
     }
 
     TEST(Address, tests)

@@ -87,7 +87,6 @@ namespace Net
         */
         bool DisconnectPeer(const unsigned int id);
 
-
         /**
         * @breif Set the "On peer pre connect" trigger. Overloads the virtual function.
         *

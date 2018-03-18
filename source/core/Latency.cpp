@@ -34,7 +34,7 @@ namespace Net
 
         Latency::Latency(const size_t maxSize) :
             m_MaxSize(std::max<size_t>(1, maxSize)),
-            m_Median(Microseconds(0)),
+            m_Median(0),
             m_ReplacePos(0)
         {
         }
@@ -65,16 +65,16 @@ namespace Net
 
             if(!oddCount)
             {
-                m_Median = (sorted[middle-1] + sorted[middle]) / 2ULL;
+                m_Median = (sorted[middle-1] + sorted[middle]).AsMicroseconds() / 2ULL;
                 return;
             }
 
-            m_Median = sorted[middle];
+            m_Median = sorted[middle].AsMicroseconds();
         }
 
         void Latency::Get(Time & time) const
         {
-            time = m_Median;
+            time = Microseconds(m_Median);
         }
 
         size_t Latency::GetCount() const

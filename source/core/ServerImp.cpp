@@ -24,6 +24,7 @@
 */
 
 #include <core/ServerImp.hpp>
+#include <iostream>
 
 namespace Net
 {
@@ -42,29 +43,116 @@ namespace Net
         {
         }
 
-        bool ServerImp::InternalDisconnectPeer(Peer * peer)
+        void ServerImp::InternalDisconnectPeer(Peer * pPeer, const bool triggerFunction, const bool sendResponse)
         {
+            Core::SafeGuard sf_internalDisconnect(m_InternalDisconnectMutex);
             Core::SafeGuard sf_peers(m_PeersMutex);
 
-            auto idPeerIt = m_IdPeers.find(peer->m_Id);
-            auto addressPeerIt = m_AddressPeers.find(peer->m_SocketAddress);
-            if(idPeerIt != m_IdPeers.end() && addressPeerIt != m_AddressPeers.end())
+            auto idPeerIt = m_IdPeers.find(pPeer->m_Id);
+            if(idPeerIt == m_IdPeers.end())
             {
-                peer->m_State = PeerImp::Disconnecting;
-                m_IdPeers.erase(idPeerIt);
-                m_AddressPeers.erase(addressPeerIt);
+                return;
             }
-            else if(idPeerIt == m_IdPeers.end() && addressPeerIt == m_AddressPeers.end())
+
+            auto addressPeerIt = m_AddressPeers.find(pPeer->m_SocketAddress);
+
+            if(sendResponse)
+            {
+                if(pPeer->m_State == PeerImp::Connected)
+                {
+                    const unsigned char disconnectData[4] =
+                    {
+                        Core::Packet::DisconnectionType, 1, 0, Core::Packet::DisconnectionTypeKicked
+                    };
+
+                    if(m_Socket.Send(disconnectData, 4, pPeer->m_SocketAddress) != 4)
+                    {
+                        std::cout << "Failed to send disconnect message." << std::endl;
+                    }
+                }
+                else if(pPeer->m_State == PeerImp::Accepted || pPeer->m_State == PeerImp::Handshaking)
+                {
+                    const unsigned char rejectData[5] =
+                    {
+                        Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeKicked
+                    };
+
+                    if(m_Socket.Send(rejectData, 5, pPeer->m_SocketAddress) != 5)
+                    {
+                        std::cout << "Failed to send reject message." << std::endl;
+                    }
+                }
+            }
+
+            m_IdPeers.erase(idPeerIt);
+            m_AddressPeers.erase(addressPeerIt);
+
+            if(triggerFunction && pPeer->m_State == PeerImp::Connected)
+            {
+                AddTrigger(new Core::OnPeerDisconnectTrigger(pPeer));
+            }
+            pPeer->m_State = PeerImp::Disconnecting;
+
+            m_PeerCleanup.Mutex.lock();
+            m_PeerCleanup.Value.insert(pPeer);
+            m_PeerCleanup.Mutex.unlock();
+
+            m_ConnectionThreadSemaphore.NotifyOne();
+        }
+
+        bool ServerImp::InternalDisconnectPeer(const unsigned int id, const bool triggerFunction, const bool sendResponse)
+        {
+            Core::SafeGuard sf_internalDisconnect(m_InternalDisconnectMutex);
+            Core::SafeGuard sf_peers(m_PeersMutex);
+
+            auto idPeerIt = m_IdPeers.find(id);
+            if(idPeerIt == m_IdPeers.end())
             {
                 return false;
             }
-            else
+
+            Peer * pPeer = idPeerIt->second;
+            auto addressPeerIt = m_AddressPeers.find(pPeer->m_SocketAddress);
+
+            if(sendResponse)
             {
-                throw Exception("Internal error. Peer maps are mismatching.");
+                if(pPeer->m_State == PeerImp::Connected)
+                {
+                    const unsigned char disconnectData[4] =
+                    {
+                        Core::Packet::DisconnectionType, 1, 0, Core::Packet::DisconnectionTypeKicked
+                    };
+
+                    if(m_Socket.Send(disconnectData, 4, pPeer->m_SocketAddress) != 4)
+                    {
+                        std::cout << "Failed to send disconnect message." << std::endl;
+                    }
+                }
+                else if(pPeer->m_State == PeerImp::Accepted || pPeer->m_State == PeerImp::Handshaking)
+                {
+                    const unsigned char rejectData[5] =
+                    {
+                        Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeKicked
+                    };
+
+                    if(m_Socket.Send(rejectData, 5, pPeer->m_SocketAddress) != 5)
+                    {
+                        std::cout << "Failed to send reject message." << std::endl;
+                    }
+                }
             }
 
+            m_IdPeers.erase(idPeerIt);
+            m_AddressPeers.erase(addressPeerIt);
+
+            if(triggerFunction && pPeer->m_State == PeerImp::Connected)
+            {
+                AddTrigger(new Core::OnPeerDisconnectTrigger(pPeer));
+            }
+            pPeer->m_State = PeerImp::Disconnecting;
+
             m_PeerCleanup.Mutex.lock();
-            m_PeerCleanup.Value.insert(peer);
+            m_PeerCleanup.Value.insert(pPeer);
             m_PeerCleanup.Mutex.unlock();
 
             m_ConnectionThreadSemaphore.NotifyOne();

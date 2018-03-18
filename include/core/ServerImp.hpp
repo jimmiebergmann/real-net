@@ -57,10 +57,13 @@ namespace Net
             ServerImp();
 
             /**
-            * @breif Disconnect peer by pointer.
+            * @breif Internal function for disconnecting peer.
+            *        Send disconnection packet if currently connected.
+            *        Triggers OnPeerDisconnect function.
             *
             */
-            bool InternalDisconnectPeer(Peer * peer);
+            void InternalDisconnectPeer(Peer * peer, const bool triggerFunction, const bool sendResponse);
+            bool InternalDisconnectPeer(const unsigned int id, const bool triggerFunction, const bool sendResponse);
 
             /**
             * @breif Add packet to connection queue.
@@ -90,6 +93,7 @@ namespace Net
             std::thread                         m_ReceiveThread;             ///< Thread for receiving packets.
             std::thread                         m_ReliableThread;            ///< Thread for handling reliable packets.
 
+            std::mutex                          m_InternalDisconnectMutex;   ///< Mutex for internal disconnect function.
             std::mutex                          m_PeersMutex;                ///< Mutex lock for m_Peers, m_ConnectedPeers and m_HandshakingPeers.
             std::map<unsigned int, Peer*>       m_IdPeers;                   ///< Map of all peers, id as key.
             std::map<SocketAddress, Peer *>     m_AddressPeers;              ///< Map of all peers. Address as key.

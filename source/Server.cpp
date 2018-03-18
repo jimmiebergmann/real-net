@@ -129,7 +129,6 @@ namespace Net
                     // New peers or not yet connected peers are only allowed to send connection packets.
                     if((pPeer == nullptr || pPeer->m_State != Core::PeerImp::Connected) && packetType != Core::Packet::ConnectionType)
                     {
-
                         continue;
                     }
 
@@ -186,17 +185,12 @@ namespace Net
         {
             // Pre-allocated respones.
             static const size_t acceptReponseSize = 20;
-            static const size_t rejectResponseSize = 5;
             static const size_t fullReponseSize = 5;
             static const size_t ackReponseSize = 3;
             static unsigned char acceptReponse[acceptReponseSize] =
             {
                 Core::Packet::ConnectionType, 0, 0, Core::Packet::ConnectionTypeAccept,
                 0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0
-            };
-            static unsigned char rejectResponse[rejectResponseSize] =
-            {
-                Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeKicked
             };
             static unsigned char fullReponse[fullReponseSize] =
             {
@@ -268,7 +262,7 @@ namespace Net
                                         if(m_Socket.Send(acceptReponse, acceptReponseSize, pPeer->GetAddress()) != acceptReponseSize)
                                         {
                                             std::cout << "Failed to send accept message." << std::endl;
-                                            InternalDisconnectPeer(pPeer);
+                                            InternalDisconnectPeer(pPeer, false, false);
                                             break;
                                         }
                                     }
@@ -337,17 +331,18 @@ namespace Net
                                         // Incorrect delay from peer.
                                         if(peerDelay > serverDelay)
                                         {
-                                            if(m_Socket.Send(rejectResponse, rejectResponseSize, pPeer->m_SocketAddress) != rejectResponseSize)
-                                            {
-                                                std::cout << "Failed to send reject message." << std::endl;
-                                            }
-
-                                            // Disconnect peer.
-                                            InternalDisconnectPeer(pPeer);
+                                            InternalDisconnectPeer(pPeer, false, true);
                                             break;
                                         }
-                                        std::cout << "Server delay: " << serverDelay.AsMicroseconds() << std::endl;
-                                        std::cout << "Peer delay:   " << peerDelay.AsMicroseconds() << std::endl;
+
+                                        // Send ack.
+                                        ackReponse[1] = 1;
+                                        ackReponse[2] = 0;
+                                        if(m_Socket.Send(ackReponse, ackReponseSize, pPacket->address) != ackReponseSize)
+                                        {
+                                            std::cout << "Failed to send acknowledgement message." << std::endl;
+                                            break;
+                                        }
 
                                         const Time latency = serverDelay - peerDelay;
                                         pPeer->m_Latency.Add(latency);
@@ -374,8 +369,7 @@ namespace Net
                                         break;
                                     }
 
-                                    // Add disconnection trigger.
-                                    AddTrigger(new Core::OnPeerDisconnectTrigger(pPeer));
+                                    InternalDisconnectPeer(pPeer, false, false);
                                 }
                                 break;
                                 default:
@@ -400,11 +394,7 @@ namespace Net
                                 break;
                             }
 
-                            // Add disconnection trigger.
-                            if(pPeer)
-                            {
-                                AddTrigger(new Core::OnPeerDisconnectTrigger(pPeer));
-                            }
+                            InternalDisconnectPeer(pPeer, false, false);
                         }
                         break;
                         default:
@@ -427,30 +417,11 @@ namespace Net
                     {
                         Peer * pPeer = *it;
 
-                        if(pPeer->m_ActivePackets.Get() == 0)
-                        {
-                            {
-                                Core::SafeGuard sf_peers(m_PeersMutex);
+                        Core::SafeGuard sf_peerActivity(pPeer->m_Activity);
 
-                                auto idPeerIt = m_IdPeers.find(pPeer->m_Id);
-                                auto addressPeerIt = m_AddressPeers.find(pPeer->m_SocketAddress);
-                                if(idPeerIt != m_IdPeers.end())
-                                {
-                                    if(idPeerIt->second != pPeer)
-                                    {
-                                        throw Exception("Trying to cleanup peer by id, with incorrect id.");
-                                    }
-                                    m_IdPeers.erase(idPeerIt);
-                                }
-                                if(addressPeerIt != m_AddressPeers.end())
-                                {
-                                    if(addressPeerIt->second != pPeer)
-                                    {
-                                        throw Exception("Trying to cleanup peer by address, with incorrect address.");
-                                    }
-                                    m_AddressPeers.erase(addressPeerIt);
-                                }
-                            }
+                        if(pPeer->m_Activity.Value == 0)
+                        {
+                            //std::cout << "Cleaned up peer: " << pPeer->m_Id << std::endl;
 
                             delete pPeer;
                             it = m_PeerCleanup.Value.erase(it);
@@ -473,15 +444,10 @@ namespace Net
         {
             // Pre-allocated respones.
             static const size_t acceptReponseSize = 20;
-            static const size_t rejectResponseSize = 5;
             static unsigned char acceptReponse[acceptReponseSize] =
             {
                 Core::Packet::ConnectionType, 0, 0, Core::Packet::ConnectionTypeAccept,
                 0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0
-            };
-            static unsigned char rejectResponse[rejectResponseSize] =
-            {
-                Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeKicked
             };
 
             // Thread is running.
@@ -543,21 +509,13 @@ namespace Net
 
                             if(m_Socket.Send(acceptReponse, acceptReponseSize, pPeer->m_SocketAddress) != acceptReponseSize)
                             {
-                                InternalDisconnectPeer(pPeer);
+                                InternalDisconnectPeer(pPeer, false, false);
                                 std::cout << "Failed to send accept message." << std::endl;
-                                break;
                             }
                         }
                         else
                         {
-                            // Send reject packet.
-                            if(m_Socket.Send(rejectResponse, rejectResponseSize, pPeer->m_SocketAddress) != rejectResponseSize)
-                            {
-                                std::cout << "Failed to send reject message." << std::endl;
-                            }
-
-                            // Disconnect peer.
-                            InternalDisconnectPeer(pPeer);
+                            InternalDisconnectPeer(pPeer, false, true);
                         }
 
                     }
@@ -567,7 +525,6 @@ namespace Net
                         Core::OnPeerConnectTrigger * pCastTrigger = static_cast<Core::OnPeerConnectTrigger *>(pTrigger);
                         Peer * pPeer = pCastTrigger->peer;
 
-                        // Call trigger function
                         if(m_OnPeerConnect)
                         {
                             m_OnPeerConnect(*pPeer);
@@ -583,20 +540,14 @@ namespace Net
                         Core::OnPeerDisconnectTrigger * pCastTrigger = static_cast<Core::OnPeerDisconnectTrigger *>(pTrigger);
                         Peer * pPeer = pCastTrigger->peer;
 
-                        if(pPeer->m_State == Core::PeerImp::Connected)
+                        if(m_OnPeerDisconnect)
                         {
-                            if(m_OnPeerDisconnect)
-                            {
-                                m_OnPeerDisconnect(*pPeer);
-                            }
-                            else
-                            {
-                                OnPeerDisconnect(*pPeer);
-                            }
+                            m_OnPeerDisconnect(*pPeer);
                         }
-
-                        // Disconnect peer.
-                        InternalDisconnectPeer(pPeer);
+                        else
+                        {
+                            OnPeerDisconnect(*pPeer);
+                        }
                     }
                     break;
                     default:
@@ -642,7 +593,47 @@ namespace Net
         m_TriggerThread.join();
 
         // Disconnect peers
-        // ..
+        for(auto it = m_AddressPeers.begin(); it != m_AddressPeers.end(); it++)
+        {
+            Peer * pPeer = it->second;
+
+            if(pPeer->m_State == Core::PeerImp::Connected)
+            {
+                const unsigned char disconnectData[4] =
+                {
+                    Core::Packet::DisconnectionType, 1, 0, Core::Packet::DisconnectionTypeKicked
+                };
+
+                if(m_Socket.Send(disconnectData, 4, pPeer->m_SocketAddress) != 4)
+                {
+                    std::cout << "Failed to send disconnect message." << std::endl;
+                }
+            }
+            else if(pPeer->m_State == Core::PeerImp::Accepted)
+            {
+                const unsigned char rejectData[5] =
+                {
+                    Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeClosed
+                };
+
+                if(m_Socket.Send(rejectData, 5, pPeer->m_SocketAddress) != 5)
+                {
+                    std::cout << "Failed to send reject message." << std::endl;
+                }
+            }
+
+            delete pPeer;
+        }
+        m_IdPeers.clear();
+        m_AddressPeers.clear();
+
+        // Clear peer cleanup
+        for(auto it = m_PeerCleanup.Value.begin(); it != m_PeerCleanup.Value.end(); it++)
+        {
+            delete *it;
+        }
+        m_PeerCleanup.Value.clear();
+
 
         // Destroy socket and settings.
         m_Socket.Close();
@@ -661,21 +652,8 @@ namespace Net
 
     bool Server::DisconnectPeer(const unsigned int id)
     {
-        Peer * pPeer = nullptr;
-        {
-            Core::SafeGuard sf_Peers(m_PeersMutex);
-            auto it = m_IdPeers.find(id);
-            if(it != m_IdPeers.end())
-            {
-                pPeer = it->second;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        return InternalDisconnectPeer(pPeer);
+        Core::SafeGuard sf_HostStop(m_HostStopMutex);
+        return InternalDisconnectPeer(id, true, true);
     }
 
     void Server::SetOnPeerPreConnect(const std::function<bool(Peer & peer)> & function)

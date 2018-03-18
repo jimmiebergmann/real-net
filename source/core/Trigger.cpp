@@ -31,8 +31,8 @@ namespace Net
     namespace Core
     {
 
-        Trigger::Trigger(const eType p_type) :
-            type(p_type)
+        Trigger::Trigger(const eType p_Type) :
+            type(p_Type)
         {
         }
 
@@ -40,25 +40,34 @@ namespace Net
         {
         }
 
+        PeerTrigger::PeerTrigger(Peer * p_Peer, const eType type) :
+            Trigger(type),
+            peer(p_Peer)
+        {
+            peer->IncreaseActivity();
+        }
+
+        PeerTrigger::~PeerTrigger()
+        {
+            peer->DecreaseActivity();
+        }
+
+
         OnPeerPreConnectTrigger::OnPeerPreConnectTrigger(Peer * p_Peer, const Time & p_ReceiveTime) :
-            Trigger(OnPeerPreConnect),
-            peer(p_Peer),
+            PeerTrigger(p_Peer, OnPeerPreConnect),
             receiveTime(p_ReceiveTime)
         {
+
         }
 
-
-
-        OnPeerConnectTrigger::OnPeerConnectTrigger(Peer * p_peer) :
-            Trigger(OnPeerConnect),
-            peer(p_peer)
+        OnPeerConnectTrigger::OnPeerConnectTrigger(Peer * p_Peer) :
+            PeerTrigger(p_Peer, OnPeerConnect)
         {
         }
 
 
-        OnPeerDisconnectTrigger::OnPeerDisconnectTrigger(Peer * p_peer) :
-            Trigger(OnPeerDisconnect),
-            peer(p_peer)
+        OnPeerDisconnectTrigger::OnPeerDisconnectTrigger(Peer * p_Peer) :
+            PeerTrigger(p_Peer, OnPeerDisconnect)
         {
         }
 

@@ -62,13 +62,21 @@ namespace Net
             static const unsigned char ConnectionTypeReject     = 0x02;
 
             /**
+            * @breif Disconnection packet types.
+            *
+            */
+            static const unsigned char DisconnectionTypeClosed  = 0x00;
+            static const unsigned char DisconnectionTypeKicked  = 0x01;
+            static const unsigned char DisconnectionTypeBanned  = 0x02;
+
+            /**
             * @breif Reject packet types.
             *
             */
-            static const unsigned char RejectTypeFull           = 0x00;
-            static const unsigned char RejectTypeClosed         = 0x01;
-            static const unsigned char RejectTypeKicked         = 0x02;
-            static const unsigned char RejectTypeBanned         = 0x03;
+            static const unsigned char RejectTypeClosed         = 0x00;
+            static const unsigned char RejectTypeKicked         = 0x01;
+            static const unsigned char RejectTypeBanned         = 0x02;
+            static const unsigned char RejectTypeFull           = 0x03;
 
             /**
             * @breif Synchronization packet types.

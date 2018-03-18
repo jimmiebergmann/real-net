@@ -53,37 +53,44 @@ namespace Net
 
         };
 
-        class OnPeerPreConnectTrigger : public Trigger
+        class PeerTrigger : public Trigger
+        {
+
+        public:
+
+            PeerTrigger(Peer * peer, const eType type);
+            virtual ~PeerTrigger();
+
+            Peer * peer;
+
+        };
+
+        class OnPeerPreConnectTrigger : public PeerTrigger
         {
 
         public:
 
             OnPeerPreConnectTrigger(Peer * peer, const Time & receiveTime);
 
-            Peer * peer;
             Time   receiveTime;
 
         };
 
-        class OnPeerConnectTrigger : public Trigger
+        class OnPeerConnectTrigger : public PeerTrigger
         {
 
         public:
 
             OnPeerConnectTrigger(Peer * peer);
 
-            Peer *  peer;
-
         };
 
-        class OnPeerDisconnectTrigger : public Trigger
+        class OnPeerDisconnectTrigger : public PeerTrigger
         {
 
         public:
 
             OnPeerDisconnectTrigger(Peer * peer);
-
-            Peer * peer;
 
         };
     }

@@ -35,14 +35,34 @@ namespace Net
         PeerImp::PeerImp(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples) :
             m_Id(id),
             m_SocketAddress(socketAddress),
-            m_ActivePackets(0),
+            m_Activity(0),
             m_State(eState::Handshaking),
             m_Latency(latencySamples)
         {
         }
 
-        void PeerImp::AddCurrentLatency(const Time & latency, const size_t maxCount)
+        void PeerImp::AddCurrentLatency(const Time & latency)
         {
+            m_Latency.Add(latency);
+        }
+
+        void PeerImp::IncreaseActivity()
+        {
+            m_Activity.Mutex.lock();
+            m_Activity.Value++;
+            m_Activity.Mutex.unlock();
+        }
+
+        void PeerImp::DecreaseActivity()
+        {
+            Core::SafeGuard sf(m_Activity);
+
+            if(m_Activity.Value == 0)
+            {
+                throw Exception("Cannot return packet to peer if m_ActivePackets == 0.");
+            }
+
+            m_Activity.Value--;
         }
 
         void PeerImp::AttachPacket(Packet * packet, Peer * peer)
@@ -54,9 +74,9 @@ namespace Net
 
             packet->peer = peer;
 
-            Core::SafeGuard sf(peer->m_ActivePackets);
+            Core::SafeGuard sf(peer->m_Activity);
 
-            peer->m_ActivePackets.Value++;
+            peer->m_Activity.Value++;
         }
 
 
@@ -68,14 +88,14 @@ namespace Net
                 throw Exception("Cannot return packet to peer. Packet is not yet attached.");
             }
 
-            Core::SafeGuard sf(pPeer->m_ActivePackets);
+            Core::SafeGuard sf(pPeer->m_Activity);
 
-            if(pPeer->m_ActivePackets.Value == 0)
+            if(pPeer->m_Activity.Value == 0)
             {
                 throw Exception("Cannot return packet to peer if m_ActivePackets == 0.");
             }
 
-            pPeer->m_ActivePackets.Value--;
+            pPeer->m_Activity.Value--;
         }
 
     }

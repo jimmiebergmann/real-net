@@ -57,13 +57,13 @@ namespace Net
         * @breif Get start time.
         *
         */
-        Time GetStartTime();
+        const Time & StartTime() const;
 
         /**
         * @breif Get stop time.
         *
         */
-        Time GetStopTime();
+        const Time & StopTime() const;
 
         /**
         * @breif Get lapsed time.
@@ -72,13 +72,13 @@ namespace Net
         *         else difference in time between Start and Stop.
         *
         */
-        Time GetLapsedTime();
+        Time LapsedTime() const;
 
         /**
         * @breif Get system time.
         *
         */
-        static Time GetSystemTime();
+        static Time SystemTime();
 
     private:
 

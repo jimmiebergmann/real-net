@@ -32,71 +32,29 @@ namespace Net
     namespace Core
     {
 
-        PeerImp::PeerImp(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples) :
-            m_Id(id),
-            m_SocketAddress(socketAddress),
-            m_Activity(0),
+        PeerImp::PeerImp() :
             m_State(eState::Handshaking),
-            m_Latency(latencySamples)
+            m_Id(0),
+            m_pLatency(nullptr)
         {
         }
 
-        void PeerImp::AddCurrentLatency(const Time & latency)
+        PeerImp::~PeerImp()
         {
-            m_Latency.Add(latency);
-        }
-
-        void PeerImp::IncreaseActivity()
-        {
-            m_Activity.Mutex.lock();
-            m_Activity.Value++;
-            m_Activity.Mutex.unlock();
-        }
-
-        void PeerImp::DecreaseActivity()
-        {
-            Core::SafeGuard sf(m_Activity);
-
-            if(m_Activity.Value == 0)
+            if(m_pLatency)
             {
-                throw Exception("Cannot return packet to peer if m_ActivePackets == 0.");
+                delete m_pLatency;
             }
-
-            m_Activity.Value--;
         }
 
-        void PeerImp::AttachPacket(Packet * packet, Peer * peer)
+        void PeerImp::Initialize(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples)
         {
-            if(packet->peer != nullptr)
-            {
-                throw Exception("Cannot assign packet to peer. Packet is already assigned.");
-            }
+            m_Id = id;
+            m_SocketAddress = socketAddress;
+            m_pLatency = new Latency(latencySamples);
 
-            packet->peer = peer;
-
-            Core::SafeGuard sf(peer->m_Activity);
-
-            peer->m_Activity.Value++;
         }
 
-
-        void PeerImp::DetachPacket(Packet * packet)
-        {
-            Peer * pPeer = nullptr;
-            if((pPeer = packet->peer) == nullptr)
-            {
-                throw Exception("Cannot return packet to peer. Packet is not yet attached.");
-            }
-
-            Core::SafeGuard sf(pPeer->m_Activity);
-
-            if(pPeer->m_Activity.Value == 0)
-            {
-                throw Exception("Cannot return packet to peer if m_ActivePackets == 0.");
-            }
-
-            pPeer->m_Activity.Value--;
-        }
 
     }
 }

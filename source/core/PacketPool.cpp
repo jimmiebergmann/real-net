@@ -155,10 +155,6 @@ namespace Net
                 return;
             }
 
-            if(packet->peer)
-            {
-                Core::PeerImp::DetachPacket(packet);
-            }
             packet->peer = nullptr;
 
             m_FreePackets.insert(packet);

@@ -107,12 +107,12 @@ namespace Net
             */
             void SerializeSequenceNumber();
 
-            unsigned char * data;           ///< Packet data.
-            size_t          size;           ///< Size of packet. Not the number of allocated bytes.
-            unsigned short  sequence;       ///< Sequence number of packet.
-            Time            receiveTime;    ///< Time of when the packet were received.
-            SocketAddress   address;        ///< Socket address of packet.
-            Peer *          peer;           ///< Pointer to peer, if connected when receiving the packet.
+            unsigned char *         data;           ///< Packet data.
+            size_t                  size;           ///< Size of packet. Not the number of allocated bytes.
+            unsigned short          sequence;       ///< Sequence number of packet.
+            Time                    receiveTime;    ///< Time of when the packet were received.
+            SocketAddress           address;        ///< Socket address of packet.
+            std::shared_ptr<Peer>   peer;           ///< Pointer to peer, if connected when receiving the packet.
 
         private:
 

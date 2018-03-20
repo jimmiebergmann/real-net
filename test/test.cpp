@@ -127,7 +127,7 @@ namespace Net
             clock.Start();
             std::this_thread::sleep_for(std::chrono::microseconds(100));
             clock.Stop();
-            EXPECT_TRUE(clock.GetLapsedTime() >= Net::Microseconds(100ULL));
+            EXPECT_TRUE(clock.LapsedTime() >= Net::Microseconds(100ULL));
         }
 
         {
@@ -137,8 +137,8 @@ namespace Net
             for(size_t i = 0; i < 10; i++)
             {
                std::this_thread::sleep_for(std::chrono::microseconds(100));
-               EXPECT_TRUE(clock.GetLapsedTime() >= lastTime);
-               lastTime = clock.GetLapsedTime();
+               EXPECT_TRUE(clock.LapsedTime() >= lastTime);
+               lastTime = clock.LapsedTime();
             }
         }
     }

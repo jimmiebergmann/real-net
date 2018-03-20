@@ -78,22 +78,12 @@ namespace Net
         void Stop();
 
         /**
-        * @breif Disconnect peer.
-        *
-        * @param id ID of peer.
-        *
-        * @return true if peer currently is connected, else false.
-        *
-        */
-        bool DisconnectPeer(const unsigned int id);
-
-        /**
         * @breif Set the "On peer pre connect" trigger. Overloads the virtual function.
         *
         * @throw Exception If function already is set, or if the server is currently hosted.
         *
         */
-        void SetOnPeerPreConnect(const std::function<bool(Peer & peer)> & function);
+        void SetOnPeerPreConnect(const std::function<bool(std::shared_ptr<Net::Peer> peer)> & function);
 
         /**
         * @breif Set the "On peer connect" trigger. Overloads the virtual function.
@@ -101,7 +91,7 @@ namespace Net
         * @throw Exception If function already is set, or if the server is currently hosted.
         *
         */
-        void SetOnPeerConnect(const std::function<void(Peer & peer)> & function);
+        void SetOnPeerConnect(const std::function<void(std::shared_ptr<Net::Peer> peer)> & function);
 
         /**
         * @breif Set the "On peer disconnect" trigger. Overloads the virtual function.
@@ -109,7 +99,7 @@ namespace Net
         * @throw Exception If function already is set, or if the server is currently hosted.
         *
         */
-        void SetOnPeerDisconnect(const std::function<void(Peer & peer)> & function);
+        void SetOnPeerDisconnect(const std::function<void(std::shared_ptr<Net::Peer> peer)> & function);
 
         /**
         * @breif Get current server settings.
@@ -124,18 +114,18 @@ namespace Net
         *        Overload and return true to accept peer. Return false to reject.
         *
         */
-        virtual bool OnPeerPreConnect(Peer & peer);
+        virtual bool OnPeerPreConnect(std::shared_ptr<Net::Peer> peer);
 
         /**
         * @breif Trigger function called when connection with new peer has been established.
         *
         */
-        virtual void OnPeerConnect(Peer & peer);
+        virtual void OnPeerConnect(std::shared_ptr<Net::Peer> peer);
 
         /**
         * @breif Trigger function called if peer disconnects.
         */
-        virtual void OnPeerDisconnect(Peer & peer);
+        virtual void OnPeerDisconnect(std::shared_ptr<Net::Peer> peer);
 
     };
 

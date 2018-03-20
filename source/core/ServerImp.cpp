@@ -43,121 +43,62 @@ namespace Net
         {
         }
 
-        void ServerImp::InternalDisconnectPeer(Peer * pPeer, const bool triggerFunction, const bool sendResponse)
+        void ServerImp::InternalDisconnectPeer(std::shared_ptr<Peer> peer, const bool triggerFunction, const bool sendResponse)
         {
-            Core::SafeGuard sf_internalDisconnect(m_InternalDisconnectMutex);
-            Core::SafeGuard sf_peers(m_PeersMutex);
-
-            auto idPeerIt = m_IdPeers.find(pPeer->m_Id);
-            if(idPeerIt == m_IdPeers.end())
+            if(!peer)
             {
                 return;
             }
 
-            auto addressPeerIt = m_AddressPeers.find(pPeer->m_SocketAddress);
-
-            if(sendResponse)
-            {
-                if(pPeer->m_State == PeerImp::Connected)
-                {
-                    const unsigned char disconnectData[4] =
-                    {
-                        Core::Packet::DisconnectionType, 1, 0, Core::Packet::DisconnectionTypeKicked
-                    };
-
-                    if(m_Socket.Send(disconnectData, 4, pPeer->m_SocketAddress) != 4)
-                    {
-                        std::cout << "Failed to send disconnect message." << std::endl;
-                    }
-                }
-                else if(pPeer->m_State == PeerImp::Accepted || pPeer->m_State == PeerImp::Handshaking)
-                {
-                    const unsigned char rejectData[5] =
-                    {
-                        Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeKicked
-                    };
-
-                    if(m_Socket.Send(rejectData, 5, pPeer->m_SocketAddress) != 5)
-                    {
-                        std::cout << "Failed to send reject message." << std::endl;
-                    }
-                }
-            }
-
-            m_IdPeers.erase(idPeerIt);
-            m_AddressPeers.erase(addressPeerIt);
-
-            if(triggerFunction && pPeer->m_State == PeerImp::Connected)
-            {
-                AddTrigger(new Core::OnPeerDisconnectTrigger(pPeer));
-            }
-            pPeer->m_State = PeerImp::Disconnecting;
-
-            m_PeerCleanup.Mutex.lock();
-            m_PeerCleanup.Value.insert(pPeer);
-            m_PeerCleanup.Mutex.unlock();
-
-            m_ConnectionThreadSemaphore.NotifyOne();
-        }
-
-        bool ServerImp::InternalDisconnectPeer(const unsigned int id, const bool triggerFunction, const bool sendResponse)
-        {
-            Core::SafeGuard sf_internalDisconnect(m_InternalDisconnectMutex);
             Core::SafeGuard sf_peers(m_PeersMutex);
 
-            auto idPeerIt = m_IdPeers.find(id);
-            if(idPeerIt == m_IdPeers.end())
+            auto addressPeerIt = m_Peers.find(peer->m_SocketAddress);
+            if(addressPeerIt == m_Peers.end())
             {
-                return false;
+                return;
             }
-
-            Peer * pPeer = idPeerIt->second;
-            auto addressPeerIt = m_AddressPeers.find(pPeer->m_SocketAddress);
 
             if(sendResponse)
             {
-                if(pPeer->m_State == PeerImp::Connected)
+                if(peer->m_State == PeerImp::Connected)
                 {
                     const unsigned char disconnectData[4] =
                     {
                         Core::Packet::DisconnectionType, 1, 0, Core::Packet::DisconnectionTypeKicked
                     };
 
-                    if(m_Socket.Send(disconnectData, 4, pPeer->m_SocketAddress) != 4)
+                    if(m_Socket.Send(disconnectData, 4, peer->m_SocketAddress) != 4)
                     {
                         std::cout << "Failed to send disconnect message." << std::endl;
                     }
                 }
-                else if(pPeer->m_State == PeerImp::Accepted || pPeer->m_State == PeerImp::Handshaking)
+                else if(peer->m_State == PeerImp::Accepted || peer->m_State == PeerImp::Handshaking)
                 {
                     const unsigned char rejectData[5] =
                     {
                         Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeKicked
                     };
 
-                    if(m_Socket.Send(rejectData, 5, pPeer->m_SocketAddress) != 5)
+                    if(m_Socket.Send(rejectData, 5, peer->m_SocketAddress) != 5)
                     {
                         std::cout << "Failed to send reject message." << std::endl;
                     }
                 }
             }
 
-            m_IdPeers.erase(idPeerIt);
-            m_AddressPeers.erase(addressPeerIt);
-
-            if(triggerFunction && pPeer->m_State == PeerImp::Connected)
+            m_PeerIds.erase(peer->m_Id);
+            m_Peers.erase(addressPeerIt);
+            auto handshakingPeerIt = m_HandshakingPeers.find(peer);
+            if(handshakingPeerIt != m_HandshakingPeers.end())
             {
-                AddTrigger(new Core::OnPeerDisconnectTrigger(pPeer));
+                m_HandshakingPeers.erase(handshakingPeerIt);
             }
-            pPeer->m_State = PeerImp::Disconnecting;
 
-            m_PeerCleanup.Mutex.lock();
-            m_PeerCleanup.Value.insert(pPeer);
-            m_PeerCleanup.Mutex.unlock();
-
-            m_ConnectionThreadSemaphore.NotifyOne();
-
-            return true;
+            if(triggerFunction && (peer->m_State == PeerImp::Connected || peer->m_State == PeerImp::Accepted))
+            {
+                AddTrigger(new Core::OnPeerDisconnectTrigger(peer));
+            }
+            peer->m_State = PeerImp::Disconnecting;
         }
 
         void ServerImp::QueueConnectionPacket(Packet * packet)
@@ -166,6 +107,21 @@ namespace Net
 
             m_ConnectionPacketQueue.Value.push(packet);
             m_ConnectionThreadSemaphore.NotifyOne();
+        }
+
+        Packet * ServerImp::GetConnectionPacket()
+        {
+            Core::SafeGuard sf_peer(m_ConnectionPacketQueue);
+
+            Packet * pPacket = nullptr;
+
+            if(m_ConnectionPacketQueue.Value.size())
+            {
+                pPacket = m_ConnectionPacketQueue.Value.front();
+                m_ConnectionPacketQueue.Value.pop();
+            }
+
+            return pPacket;
         }
 
         void ServerImp::AddTrigger(Trigger * trigger)
@@ -186,9 +142,10 @@ namespace Net
             {
                 m_LastPeerId++;
 
-                auto it = m_IdPeers.find(m_LastPeerId);
-                if(it == m_IdPeers.end())
+                auto it = m_PeerIds.find(m_LastPeerId);
+                if(it == m_PeerIds.end())
                 {
+                    m_PeerIds.insert(m_LastPeerId);
                     return m_LastPeerId;
                 }
             }

@@ -62,8 +62,7 @@ namespace Net
             *        Triggers OnPeerDisconnect function.
             *
             */
-            void InternalDisconnectPeer(Peer * peer, const bool triggerFunction, const bool sendResponse);
-            bool InternalDisconnectPeer(const unsigned int id, const bool triggerFunction, const bool sendResponse);
+            void InternalDisconnectPeer(std::shared_ptr<Peer> peer, const bool triggerFunction, const bool sendResponse);
 
             /**
             * @breif Add packet to connection queue.
@@ -71,6 +70,14 @@ namespace Net
             *
             */
             void QueueConnectionPacket(Packet * packet);
+
+            /**
+            * @breif Get connect packet from queue.
+            *
+            * @return Pointer to packet, null if queue is empty.
+            *
+            */
+            Packet * GetConnectionPacket();
 
             /**
             * @breif Add trigger to queue.
@@ -86,34 +93,42 @@ namespace Net
             */
             unsigned int GetNextPeerId();
 
-            Settings                            m_Settings;                  ///< Server settings.
-            std::atomic<bool>                   m_Hosted;                    ///< Is the server currently hosted?
-            std::atomic<bool>                   m_Stopping;                  ///< Is the server currently stopping?
-            std::mutex                          m_HostStopMutex;             ///< Mutex for hosting and stopping server.
-            std::thread                         m_ReceiveThread;             ///< Thread for receiving packets.
-            std::thread                         m_ReliableThread;            ///< Thread for handling reliable packets.
+            Settings                                        m_Settings;                  ///< Server settings.
+            std::atomic<bool>                               m_Hosted;                    ///< Is the server currently hosted?
+            std::atomic<bool>                               m_Stopping;                  ///< Is the server currently stopping?
+            std::mutex                                      m_HostStopMutex;             ///< Mutex for hosting and stopping server.
+            std::thread                                     m_ReceiveThread;             ///< Thread for receiving packets.
+            std::thread                                     m_ReliableThread;            ///< Thread for handling reliable packets.
 
-            std::mutex                          m_InternalDisconnectMutex;   ///< Mutex for internal disconnect function.
-            std::mutex                          m_PeersMutex;                ///< Mutex lock for m_Peers, m_ConnectedPeers and m_HandshakingPeers.
-            std::map<unsigned int, Peer*>       m_IdPeers;                   ///< Map of all peers, id as key.
-            std::map<SocketAddress, Peer *>     m_AddressPeers;              ///< Map of all peers. Address as key.
-            Safe<std::set<Peer *>>              m_PeerCleanup;               ///< Set of peers to clean up.
-            std::atomic<unsigned int>           m_LastPeerId;                ///< Last peer id in use.
+            std::mutex                                      m_PeersMutex;                ///< Mutex lock for m_Peers, m_ConnectedPeers and m_HandshakingPeers.
+            std::map<SocketAddress, std::shared_ptr<Peer>>  m_Peers;                     ///< Map of all peers. Address as key.
+            std::set<unsigned int>                          m_PeerIds;                   ///< Set of all peer IDs in use.
+            std::atomic<unsigned int>                       m_LastPeerId;                ///< Last peer id in use.
+            std::set<std::shared_ptr<Peer>>                 m_HandshakingPeers;          ///< Set of all handshaking peers.
 
-            UdpSocket                           m_Socket;                    ///< Socket for receiving and sending data.
-            SocketSelector                      m_SocketSelector;            ///< Socket selector for receive socket.
-            PacketPool                          m_PacketPool;                ///< Pool of packets
+            UdpSocket                                       m_Socket;                    ///< Socket for receiving and sending data.
+            SocketSelector                                  m_SocketSelector;            ///< Socket selector for receive socket.
+            PacketPool                                      m_PacketPool;                ///< Pool of packets
 
-            std::thread                         m_ConnectionThread;          ///< Thread for handling incoming and established connections.
-            Semaphore                           m_ConnectionThreadSemaphore; ///< Sempahore for triggering the connection thread.
-            Safe<std::queue<Packet *>>          m_ConnectionPacketQueue;     ///< Queue of connection packets.
+            std::thread                                     m_ConnectionThread;          ///< Thread for handling incoming and established connections.
+            Semaphore                                       m_ConnectionThreadSemaphore; ///< Sempahore for triggering the connection thread.
+            Safe<std::queue<Packet *>>                      m_ConnectionPacketQueue;     ///< Queue of connection packets.
 
-            std::thread                         m_TriggerThread;             ///< Thread handling all trigger functions.
-            Semaphore                           m_TriggerThreadSemaphore;          ///< Sempahore for triggering the trigger thread.
-            Safe<std::queue<Trigger *>>         m_TriggerQueue;              ///< Queue of triggers.
-            std::function<bool(Peer & peer)>    m_OnPeerPreConnect;
-            std::function<void(Peer & peer)>    m_OnPeerConnect;
-            std::function<void(Peer & peer)>    m_OnPeerDisconnect;
+            std::thread                                     m_TriggerThread;             ///< Thread handling all trigger functions.
+            Semaphore                                       m_TriggerThreadSemaphore;    ///< Sempahore for triggering the trigger thread.
+            Safe<std::queue<Trigger *>>                     m_TriggerQueue;              ///< Queue of triggers.
+            std::function<bool(std::shared_ptr<Peer>)>      m_OnPeerPreConnect;          ///< Replacing virtual function if set.
+            std::function<void(std::shared_ptr<Peer>)>      m_OnPeerConnect;             ///< Replacing virtual function if set.
+            std::function<void(std::shared_ptr<Peer>)>      m_OnPeerDisconnect;          ///< Replacing virtual function if set.
+
+
+        private:
+
+            /**
+            * @breif Deleted copy constructor.
+            *
+            */
+            ServerImp(const ServerImp & serverImp);
 
 
             REALNET_TEST_FRIEND                 ///< Allow private tests.

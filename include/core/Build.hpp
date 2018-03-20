@@ -50,6 +50,7 @@
 #endif
 
 #include <Exception.hpp>
+#include <memory>
 
 
 namespace Net

@@ -37,31 +37,34 @@ namespace Net
 
     void Clock::Start()
     {
-        m_StartTime = GetSystemTime();
+        m_StartTime = SystemTime();
         m_StopTime = Time::Zero;
     }
 
     void Clock::Stop()
     {
-        m_StopTime = GetSystemTime();
+        if(m_StopTime != Time::Zero)
+        {
+            m_StopTime = SystemTime();
+        }
     }
 
-    Time Clock::GetStartTime()
+    const Time & Clock::StartTime() const
     {
         return m_StartTime;
     }
 
-    Time Clock::GetStopTime()
+    const Time & Clock::StopTime() const
     {
         return m_StopTime;
     }
 
-    Time Clock::GetLapsedTime()
+    Time Clock::LapsedTime() const
     {
-        return (m_StopTime != Time::Zero ? m_StopTime : GetSystemTime()) - m_StartTime;
+        return m_StopTime != Time::Zero ? m_StopTime : (SystemTime() - m_StartTime);
     }
 
-    Time Clock::GetSystemTime()
+    Time Clock::SystemTime()
     {
     // Windows implementation.
     #ifdef REALNET_PLATFORM_WINDOWS

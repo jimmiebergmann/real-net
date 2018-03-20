@@ -28,26 +28,41 @@
 namespace Net
 {
 
-    Peer::Peer(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples) :
-        PeerImp(id, socketAddress, latencySamples)
+    Peer::Peer() :
+        PeerImp()
     {
     }
 
-    unsigned short Peer::GetId() const
+    Peer::~Peer()
+    {
+    }
+
+    unsigned short Peer::Id() const
     {
         return m_Id;
     }
 
-    const SocketAddress & Peer::GetAddress() const
+    const SocketAddress & Peer::Address() const
     {
         return m_SocketAddress;
     }
 
-    Time Peer::GetLatency() const
+    Time Peer::Latency() const
     {
         Time time;
-        m_Latency.Get(time);
+        m_pLatency->Get(time);
         return time;
+    }
+
+    Time Peer::ConnectedTime()
+    {
+        if(m_State != Connected)
+        {
+            return Time::Zero;
+        }
+
+        Core::SafeGuard sf_clock(m_Clock);
+        return m_Clock.Value.LapsedTime();
     }
 
 }

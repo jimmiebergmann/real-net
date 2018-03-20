@@ -29,6 +29,7 @@
 #include <core/Safe.hpp>
 #include <core/Packet.hpp>
 #include <core/Latency.hpp>
+#include <Clock.hpp>
 #include <Address.hpp>
 #include <atomic>
 
@@ -79,55 +80,36 @@ namespace Net
             };
 
             /**
-            * @breif Add current latency of peer.
-            *
-            * @param latency    Current round-trip delay time of peer.
-            *
-            */
-            void AddCurrentLatency(const Time & latency);
-
-            /**
-            * @breif Increment activity counter.
-            *
-            */
-            void IncreaseActivity();
-
-            /**
-            * @breif Decrement activity counter.
-            *
-            */
-            void DecreaseActivity();
-
-            /**
-            * @breif Increment activity counter.
-            *        The packet is passed, but not stored, only for error checking.
-            *
-            * @throw Exception  If passed packet's peer pointer is incorrect.
-            *
-            */
-            static void AttachPacket(Packet * packet, Peer * peer);
-
-            /**
-            * @breif Decrement activity counter.
-            *        The packet is passed, but not stored, only for error checking.
-            *
-            * @throw Exception  If passed packet's peer pointer is incorrect.
-            *
-            */
-            static void DetachPacket(Packet * packet);
-
-            /**
             * @breif Constructor.
             *
             */
-            PeerImp(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples);
+            PeerImp();
 
-            const unsigned short    m_Id;               ///< Id of peer.
-            const SocketAddress     m_SocketAddress;    ///< Ip and port of peer.
-            Safe<size_t>            m_Activity;         ///< Peer activity. Cannot cleanup until 0.
+            /**
+            * @breif Destructor.
+            *
+            */
+            ~PeerImp();
+
+            /**
+            * @breif Initialize peer class values.
+            *
+            */
+            void Initialize(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples);
+
             std::atomic<eState>     m_State;            ///< Current state of peer.
-            Time                    m_AcceptTime;       ///< System time of when the peer were accepted.
-            Core::Latency           m_Latency;          ///< Latency calculator.
+            unsigned short          m_Id;               ///< Id of peer.
+            SocketAddress           m_SocketAddress;    ///< Ip and port of peer.
+            Safe<Clock>             m_Clock;            ///< Timer starting when accepted or connected, depending on state.
+            Core::Latency *         m_pLatency;         ///< Latency calculator.
+
+        private:
+
+            /**
+            * @breif Deleted copy constructor.
+            *
+            */
+            PeerImp(const PeerImp & peerImp);
         };
 
     }

@@ -62,20 +62,23 @@ namespace Net
                  const size_t           maxConnections = 0,
                  const Address &        host = Address(Address::Any),
                  const Time &           timeout = Seconds(30),
+                 const Time &           handshakeTimeout = Seconds(10),
                  const size_t           latencySamples = 7);
 
         Settings(const Address &        host,
                  const unsigned short   port,
                  const Time &           timeout = Seconds(30),
+                 const Time &           handshakeTimeout = Seconds(10),
                  const size_t           latencySamples = 7);
 
 
 
-        unsigned short  port;           ///< Hosting port.
-        size_t          maxConnections; ///< Maximum number of concurrent connections.
-        Address         host;           ///< Host address and ip family of server. "Any" will allow both Ipv4 and Ipv6 connections.
-        Time            timeout;        ///< Peer/server timeout, nessecary packets are not received in time if reached.
-        size_t          latencySamples; ///< Number of samples used for latency calculation.
+        unsigned short  port;               ///< Hosting port.
+        size_t          maxConnections;     ///< Maximum number of concurrent connections.
+        Address         host;               ///< Host address and ip family of server. "Any" will allow both Ipv4 and Ipv6 connections.
+        Time            timeout;            ///< Peer/server timeout, nessecary packets are not received in time if reached.
+        Time            handshakeTimeout;   ///< Number of time until handshake timeout.
+        size_t          latencySamples;     ///< Number of samples used for latency calculation.
 
     };
 

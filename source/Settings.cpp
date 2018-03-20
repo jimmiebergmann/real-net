@@ -41,23 +41,27 @@ namespace Net
                        const size_t           p_MaxConnections,
                        const Address &        p_Host,
                        const Time &           p_Timeout,
+                       const Time &           p_HandshakeTimeout,
                        const size_t           p_LatencySamples) :
         port(p_Port),
         maxConnections(p_MaxConnections),
         host(p_Host),
         timeout(p_Timeout),
+        handshakeTimeout(p_HandshakeTimeout),
         latencySamples(p_LatencySamples)
     {
     }
 
     Settings::Settings(const Address &        p_Host,
                        const unsigned short   p_Port,
+                       const Time &           p_HandshakeTimeout,
                        const Time &           p_Timeout,
                        const size_t           p_LatencySamples) :
         port(p_Port),
         maxConnections(0),
         host(p_Host),
         timeout(p_Timeout),
+        handshakeTimeout(p_HandshakeTimeout),
         latencySamples(p_LatencySamples)
     {
     }

@@ -44,25 +44,37 @@ namespace Net
         * @breif Constructor.
         *
         */
-        Peer(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples);
+        Peer();
+
+        /**
+        * @breif Destructor.
+        *
+        */
+        virtual ~Peer();
 
         /**
         * @breif Get id of peer.
         *
         */
-        unsigned short GetId() const;
+        unsigned short Id() const;
 
         /**
         * @breif Get socket address of peer.
         *
         */
-        const SocketAddress & GetAddress() const;
+        const SocketAddress & Address() const;
 
         /**
         * @breif Get latency of peer.
         *
         */
-        Time GetLatency() const;
+        Time Latency() const;
+
+        /**
+        * @breif Get connection time.
+        *
+        */
+        Time ConnectedTime();
 
     };
 

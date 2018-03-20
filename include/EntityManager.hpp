@@ -158,7 +158,7 @@ namespace Net
     private:
 
         /**
-        * @breif Copy constructor.
+        * @breif Deleted copy constructor.
         *
         */
         EntityManager(const EntityManager & entityManager);

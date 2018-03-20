@@ -1,29 +1,47 @@
 #include <Server.hpp>
 #include <Client.hpp>
+#include <set>
 #include <iostream>
+
+void PrintPeers(std::set<std::shared_ptr<Net::Peer>> & peers)
+{
+    std::cout << "Peer count: " << peers.size() << std::endl;
+    for(auto it = peers.begin(); it != peers.end(); it++)
+    {
+        std::cout << (*it)->Id() << ": Latency: " << (*it)->Latency().AsMicroseconds() << "   Connected for: " << (*it)->ConnectedTime().AsSeconds() << std::endl;
+    }
+    std::cout << std::endl;
+}
 
 int RunServer()
 {
     Net::Server server;
 
+    std::set<std::shared_ptr<Net::Peer>> peers;
+
     // Set triggers.
-    server.SetOnPeerPreConnect([](Net::Peer & peer) -> bool
+    server.SetOnPeerPreConnect([&peers](std::shared_ptr<Net::Peer> peer) -> bool
     {
-        std::cout << "Peer is trying to connect: " << peer.GetId() << std::endl;
+        peers.insert(peer);
+
+        std::cout << "Peer is trying to connect: " << peer->Id() << std::endl;
+        PrintPeers(peers);
 
         return true;
     });
-    server.SetOnPeerConnect([&server](Net::Peer & peer)
+    server.SetOnPeerConnect([&peers](std::shared_ptr<Net::Peer> peer)
     {
-        std::cout << "Peer Connected: " << peer.GetId() << ". Address: " << peer.GetAddress().Ip.AsString() << "-" << peer.GetAddress().Port << std::endl;
-        std::cout << "Latency: " << peer.GetLatency().AsMicroseconds() << std::endl;
+        std::cout << "Peer Connected: " << peer->Id() << std::endl;
+        PrintPeers(peers);
 
-        //server.DisconnectPeer(peer.GetId());
         return true;
     });
-    server.SetOnPeerDisconnect([](Net::Peer & peer)
+    server.SetOnPeerDisconnect([&peers](std::shared_ptr<Net::Peer> peer)
     {
-        std::cout << "Peer Disconnected: " << peer.GetId() << std::endl;
+        peers.erase(peer);
+
+        std::cout << "Peer Disconnected: " << peer->Id() << std::endl;
+        PrintPeers(peers);
 
         return true;
     });

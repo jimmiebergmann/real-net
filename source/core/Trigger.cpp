@@ -40,33 +40,30 @@ namespace Net
         {
         }
 
-        PeerTrigger::PeerTrigger(Peer * p_Peer, const eType type) :
+        PeerTrigger::PeerTrigger(std::shared_ptr<Peer> p_Peer, const eType type) :
             Trigger(type),
             peer(p_Peer)
         {
-            peer->IncreaseActivity();
         }
 
         PeerTrigger::~PeerTrigger()
         {
-            peer->DecreaseActivity();
         }
 
-
-        OnPeerPreConnectTrigger::OnPeerPreConnectTrigger(Peer * p_Peer, const Time & p_ReceiveTime) :
+        OnPeerPreConnectTrigger::OnPeerPreConnectTrigger(std::shared_ptr<Peer> p_Peer, const Time & p_ReceiveTime) :
             PeerTrigger(p_Peer, OnPeerPreConnect),
             receiveTime(p_ReceiveTime)
         {
 
         }
 
-        OnPeerConnectTrigger::OnPeerConnectTrigger(Peer * p_Peer) :
+        OnPeerConnectTrigger::OnPeerConnectTrigger(std::shared_ptr<Peer> p_Peer) :
             PeerTrigger(p_Peer, OnPeerConnect)
         {
         }
 
 
-        OnPeerDisconnectTrigger::OnPeerDisconnectTrigger(Peer * p_Peer) :
+        OnPeerDisconnectTrigger::OnPeerDisconnectTrigger(std::shared_ptr<Peer> p_Peer) :
             PeerTrigger(p_Peer, OnPeerDisconnect)
         {
         }

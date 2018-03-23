@@ -34,7 +34,7 @@
 namespace Net
 {
 
-    class Server : public EntityManager, private Core::ServerImp
+    class Server : public EntityManager, public Core::ServerImp
     {
 
     public:
@@ -76,6 +76,15 @@ namespace Net
         *
         */
         void Stop();
+
+        /**
+        * @breif Disconnect peer from server.
+        *
+        */
+        virtual void DisconnectPeer(std::shared_ptr<Peer> peer);
+
+
+        void SetPeerTimeout(std::shared_ptr<Peer> peer, const Time & timeout);
 
         /**
         * @breif Set the "On peer pre connect" trigger. Overloads the virtual function.

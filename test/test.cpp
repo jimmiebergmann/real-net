@@ -73,48 +73,92 @@ namespace Net
             const Net::Time time_1 = Net::Microseconds(100ULL);
             const Net::Time time_2 = Net::Microseconds(200ULL);
 
+            // Equal
             EXPECT_TRUE(time_1 == time_1);
             EXPECT_FALSE(time_1 == time_2);
 
+            // Not equal
             EXPECT_TRUE(time_1 != time_2);
             EXPECT_FALSE(time_1 != time_1);
 
+            // Larger
             EXPECT_TRUE(time_2 > time_1);
             EXPECT_FALSE(time_1 > time_2);
 
+            // Less
             EXPECT_TRUE(time_1 < time_2);
             EXPECT_FALSE(time_2 < time_1);
 
+            // Larger equal
             EXPECT_TRUE(time_2 >= time_1);
             EXPECT_TRUE(time_2 >= time_2);
             EXPECT_FALSE(time_1 >= time_2);
 
+            // Less equal
             EXPECT_TRUE(time_1 <= time_2);
             EXPECT_TRUE(time_1 <= time_1);
             EXPECT_FALSE(time_2 <= time_1);
 
+            // Addition
             EXPECT_EQ(time_1 + time_1, time_2);
             EXPECT_NE(time_1 + time_2, time_2);
+            EXPECT_EQ(time_1 + Net::Time::Infinite, Net::Time::Infinite);
 
+            // Subtraction
             EXPECT_EQ(time_2 - time_1, time_1);
             EXPECT_NE(time_2 - time_2, time_1);
             EXPECT_EQ(time_2 - time_2, Time::Zero);
 
+            // Division
             EXPECT_EQ(time_1 / 5ULL, Net::Microseconds(20ULL));
+            EXPECT_EQ(time_1 / 5.0f, Net::Microseconds(20ULL));
+            EXPECT_EQ(time_1 / 2.5f, Net::Microseconds(40ULL));
             EXPECT_NE(time_1 / 10ULL, Net::Microseconds(20ULL));
+            EXPECT_NE(time_1 / 10.0f, Net::Microseconds(20ULL));
 
+            EXPECT_EQ(time_1 / 100.0f, Net::Microseconds(1ULL));
+            EXPECT_EQ(time_1 / 100.1f, Net::Microseconds(0ULL));
+            EXPECT_NE(Net::Time::Infinite / 2ULL, Net::Time::Infinite);
+            EXPECT_NE(Net::Time::Infinite / 2ULL, Net::Time::Zero);
+            EXPECT_NE(Net::Time::Infinite / 1.25f, Net::Time::Infinite);
+            EXPECT_NE(Net::Time::Infinite / 1.25f, Net::Time::Zero);
+
+
+            // Multiplication
+            EXPECT_EQ(time_1 * 5ULL, Net::Microseconds(500ULL));
+            EXPECT_EQ(time_1 * 5.0f, Net::Microseconds(500ULL));
+            EXPECT_EQ((Net::Time::Infinite / 1.25f) * 10ULL, Net::Time::Infinite);
+            EXPECT_EQ((Net::Time::Infinite / 1.25f) * 10.0f, Net::Time::Infinite);
+
+
+            // Modulus
             EXPECT_EQ(time_1 % 55ULL, Net::Microseconds(45ULL));
             EXPECT_EQ(time_1 % 75ULL, Net::Microseconds(25ULL));
 
+            // Self subtraction
             {
                 Net::Time time = Net::Microseconds(100ULL);
                 time -= Net::Microseconds(65ULL);
                 EXPECT_EQ(time, Net::Microseconds(35ULL));
+
+                time = Net::Microseconds(100ULL);
+                time -= Net::Microseconds(200ULL);
+                EXPECT_EQ(time, Net::Time::Zero);
             }
+
+            // Self addition
             {
                 Net::Time time = Net::Microseconds(100ULL);
                 time += Net::Microseconds(65ULL);
                 EXPECT_EQ(time, Net::Microseconds(165ULL));
+
+                time = Net::Time::Infinite;
+                time += Net::Microseconds(100ULL);
+                EXPECT_EQ(time, Net::Time::Infinite);
+
+                time = Net::Microseconds(100ULL);
+                time += Net::Time::Infinite;
+                EXPECT_EQ(time, Net::Time::Infinite);
             }
         }
 

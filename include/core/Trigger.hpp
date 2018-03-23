@@ -60,7 +60,8 @@ namespace Net
 
             PeerTrigger(std::shared_ptr<Peer> peer, const eType type);
             virtual ~PeerTrigger();
-            std::shared_ptr<Peer> peer;
+
+            const std::shared_ptr<Peer> peer;
 
         };
 
@@ -71,7 +72,7 @@ namespace Net
 
             OnPeerPreConnectTrigger(std::shared_ptr<Peer> peer, const Time & receiveTime);
 
-            Time   receiveTime;
+            const Time   receiveTime;
 
         };
 
@@ -89,7 +90,9 @@ namespace Net
 
         public:
 
-            OnPeerDisconnectTrigger(std::shared_ptr<Peer> peer);
+            OnPeerDisconnectTrigger(std::shared_ptr<Peer> peer, const PeerImp::eState lastState);
+
+            const PeerImp::eState lastState;
 
         };
     }

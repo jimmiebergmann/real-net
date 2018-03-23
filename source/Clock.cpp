@@ -43,7 +43,7 @@ namespace Net
 
     void Clock::Stop()
     {
-        if(m_StopTime != Time::Zero)
+        if(m_StopTime.IsZero() == false)
         {
             m_StopTime = SystemTime();
         }
@@ -61,7 +61,7 @@ namespace Net
 
     Time Clock::LapsedTime() const
     {
-        return m_StopTime != Time::Zero ? m_StopTime : (SystemTime() - m_StartTime);
+        return m_StopTime.IsZero() == false ? m_StopTime : (SystemTime() - m_StartTime);
     }
 
     Time Clock::SystemTime()

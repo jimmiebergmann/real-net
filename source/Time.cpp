@@ -27,7 +27,8 @@
 
 namespace Net
 {
-    const Time Time::Infinite = Microseconds(0xFFFFFFFFFFFFFFFFULL);
+    static const unsigned long long infiniteValue = 0xFFFFFFFFFFFFFFFFULL;
+    const Time Time::Infinite = Microseconds(infiniteValue);
     const Time Time::Zero = Microseconds(0);
 
 
@@ -49,6 +50,11 @@ namespace Net
     unsigned long long Time::AsMicroseconds() const
     {
         return m_Microseconds;
+    }
+
+    bool Time::IsZero() const
+    {
+        return m_Microseconds == 0ULL;
     }
 
     bool Time::operator == (const Time & time) const
@@ -83,11 +89,25 @@ namespace Net
 
     Time Time::operator + (const Time & time) const
     {
+        // Overflow check
+        if(time.m_Microseconds == infiniteValue ||
+           (time.m_Microseconds != 0ULL && (m_Microseconds + time.m_Microseconds) < m_Microseconds))
+        {
+            return Time(infiniteValue);
+        }
+
         return Time(m_Microseconds + time.m_Microseconds);
     }
 
     Time & Time::operator += (const Time & time)
     {
+        if(time.m_Microseconds == infiniteValue ||
+           (time.m_Microseconds != 0ULL && (m_Microseconds + time.m_Microseconds) < m_Microseconds))
+        {
+            m_Microseconds = infiniteValue;
+            return *this;
+        }
+
         m_Microseconds += time.m_Microseconds;
         return *this;
     }
@@ -116,12 +136,32 @@ namespace Net
 
     Time Time::operator * (const unsigned long long & value) const
     {
+        if (value > 0ULL && m_Microseconds > infiniteValue / value)
+        {
+            return Time(infiniteValue);
+        }
+
         return Time(m_Microseconds * value);
+    }
+
+    Time Time::operator * (const double & value) const
+    {
+        if (value > 0ULL && static_cast<double>(m_Microseconds) > static_cast<double>(infiniteValue) / value)
+        {
+            return Time(infiniteValue);
+        }
+
+        return Time(static_cast<unsigned long long>(static_cast<double>(m_Microseconds) * value));
     }
 
     Time Time::operator / (const unsigned long long & value) const
     {
         return Time(m_Microseconds / value);
+    }
+
+    Time Time::operator / (const double & value) const
+    {
+        return Time(static_cast<unsigned long long>(static_cast<double>(m_Microseconds) / value));
     }
 
     Time Time::operator % (const unsigned long long & value) const

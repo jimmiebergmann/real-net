@@ -33,8 +33,10 @@ namespace Net
     {
 
         PeerImp::PeerImp() :
+            m_pServer(nullptr),
             m_State(eState::Handshaking),
             m_Id(0),
+            m_Timeout(0),
             m_pLatency(nullptr)
         {
         }
@@ -47,10 +49,13 @@ namespace Net
             }
         }
 
-        void PeerImp::Initialize(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples)
+        void PeerImp::Initialize(Server * pServer, const unsigned short id, const SocketAddress & socketAddress,
+                                 const Time & timeout, const size_t latencySamples)
         {
+            m_pServer = pServer;
             m_Id = id;
             m_SocketAddress = socketAddress;
+            m_Timeout = timeout.AsMicroseconds();
             m_pLatency = new Latency(latencySamples);
 
         }

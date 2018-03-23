@@ -37,68 +37,29 @@ namespace Net
             m_Stopping(false),
             m_LastPeerId(0),
             m_PacketPool(10),
+            m_TriggerQueue(nullptr, true),
             m_OnPeerPreConnect(nullptr),
             m_OnPeerConnect(nullptr),
             m_OnPeerDisconnect(nullptr)
         {
         }
 
-        void ServerImp::InternalDisconnectPeer(std::shared_ptr<Peer> peer, const bool triggerFunction, const bool sendResponse)
+        void ServerImp::DisconnectPeerByPointer(Peer * peer)
         {
-            if(!peer)
-            {
-                return;
-            }
+            std::map<SocketAddress, std::shared_ptr<Peer>>::iterator peerIt;
 
-            Core::SafeGuard sf_peers(m_PeersMutex);
-
-            auto addressPeerIt = m_Peers.find(peer->m_SocketAddress);
-            if(addressPeerIt == m_Peers.end())
             {
-                return;
-            }
-
-            if(sendResponse)
-            {
-                if(peer->m_State == PeerImp::Connected)
+                peerIt = m_Peers.find(peer->m_SocketAddress);
+                if(peerIt == m_Peers.end())
                 {
-                    const unsigned char disconnectData[4] =
-                    {
-                        Core::Packet::DisconnectionType, 1, 0, Core::Packet::DisconnectionTypeKicked
-                    };
-
-                    if(m_Socket.Send(disconnectData, 4, peer->m_SocketAddress) != 4)
-                    {
-                        std::cout << "Failed to send disconnect message." << std::endl;
-                    }
+                    throw Exception("Cannot find peer by raw pointer.");
+                    return;
                 }
-                else if(peer->m_State == PeerImp::Accepted || peer->m_State == PeerImp::Handshaking)
-                {
-                    const unsigned char rejectData[5] =
-                    {
-                        Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeKicked
-                    };
 
-                    if(m_Socket.Send(rejectData, 5, peer->m_SocketAddress) != 5)
-                    {
-                        std::cout << "Failed to send reject message." << std::endl;
-                    }
-                }
             }
 
-            m_PeerIds.erase(peer->m_Id);
-            m_Peers.erase(addressPeerIt);
-            auto handshakingPeerIt = m_HandshakingPeers.find(peer);
-            if(handshakingPeerIt != m_HandshakingPeers.end())
-            {
-                m_HandshakingPeers.erase(handshakingPeerIt);
-            }
+            DisconnectPeer(peerIt->second);
 
-            if(triggerFunction && (peer->m_State == PeerImp::Connected || peer->m_State == PeerImp::Accepted))
-            {
-                AddTrigger(new Core::OnPeerDisconnectTrigger(peer));
-            }
-            peer->m_State = PeerImp::Disconnecting;
         }
 
         void ServerImp::QueueConnectionPacket(Packet * packet)
@@ -122,18 +83,6 @@ namespace Net
             }
 
             return pPacket;
-        }
-
-        void ServerImp::AddTrigger(Trigger * trigger)
-        {
-            if(trigger == nullptr)
-            {
-                throw Exception("Passed nullptr to AddTrigger.");
-            }
-
-            Core::SafeGuard sf(m_TriggerQueue);
-            m_TriggerQueue.Value.push(trigger);
-            m_TriggerThreadSemaphore.NotifyOne();
         }
 
         unsigned int ServerImp::GetNextPeerId()

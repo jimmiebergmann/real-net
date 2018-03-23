@@ -28,6 +28,7 @@
 #include <core/SocketSelector.hpp>
 #include <core/UdpSocket.hpp>
 #include <core/Semaphore.hpp>
+#include <core/DataQueue.hpp>
 #include <core/Safe.hpp>
 #include <core/PacketPool.hpp>
 #include <core/Trigger.hpp>
@@ -48,6 +49,17 @@ namespace Net
         class ServerImp
         {
 
+        public:
+
+            friend class Net::Peer;
+
+            /**
+            * @breif Disconnect peer from server.
+            *        This function is primary used by Peer class, allowing them to disconnect themselves.
+            *
+            */
+            virtual void DisconnectPeer(std::shared_ptr<Peer> peer) = 0;
+
         protected:
 
             /**
@@ -57,12 +69,12 @@ namespace Net
             ServerImp();
 
             /**
-            * @breif Internal function for disconnecting peer.
-            *        Send disconnection packet if currently connected.
-            *        Triggers OnPeerDisconnect function.
+            * @breif Disconnect peer by raw pointer.
+            *
+            * @throw Exception  If raw pointer is unkown to server.
             *
             */
-            void InternalDisconnectPeer(std::shared_ptr<Peer> peer, const bool triggerFunction, const bool sendResponse);
+            void DisconnectPeerByPointer(Peer * peer);
 
             /**
             * @breif Add packet to connection queue.
@@ -78,14 +90,6 @@ namespace Net
             *
             */
             Packet * GetConnectionPacket();
-
-            /**
-            * @breif Add trigger to queue.
-            *
-            * @throw Exception if trigger is nullptr.
-            *
-            */
-            void AddTrigger(Trigger * trigger);
 
             /**
             * @breif Get the next free peer ID.
@@ -110,13 +114,13 @@ namespace Net
             SocketSelector                                  m_SocketSelector;            ///< Socket selector for receive socket.
             PacketPool                                      m_PacketPool;                ///< Pool of packets
 
+            std::mutex                                      m_PeerDisconnectMutex;       ///< Mutex for locking Disconnect() function.
             std::thread                                     m_ConnectionThread;          ///< Thread for handling incoming and established connections.
             Semaphore                                       m_ConnectionThreadSemaphore; ///< Sempahore for triggering the connection thread.
             Safe<std::queue<Packet *>>                      m_ConnectionPacketQueue;     ///< Queue of connection packets.
 
             std::thread                                     m_TriggerThread;             ///< Thread handling all trigger functions.
-            Semaphore                                       m_TriggerThreadSemaphore;    ///< Sempahore for triggering the trigger thread.
-            Safe<std::queue<Trigger *>>                     m_TriggerQueue;              ///< Queue of triggers.
+            DataQueue<Trigger *>                            m_TriggerQueue;              ///< Queue of triggers.
             std::function<bool(std::shared_ptr<Peer>)>      m_OnPeerPreConnect;          ///< Replacing virtual function if set.
             std::function<void(std::shared_ptr<Peer>)>      m_OnPeerConnect;             ///< Replacing virtual function if set.
             std::function<void(std::shared_ptr<Peer>)>      m_OnPeerDisconnect;          ///< Replacing virtual function if set.

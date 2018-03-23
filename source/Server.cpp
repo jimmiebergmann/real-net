@@ -253,7 +253,7 @@ namespace Net
                                         if(m_Socket.Send(acceptReponse, acceptReponseSize, peer->m_SocketAddress) != acceptReponseSize)
                                         {
                                             std::cout << "Failed to send accept message." << std::endl;
-                                            InternalDisconnectPeer(peer, false, false);
+                                            DisconnectPeer(peer);
                                             break;
                                         }
                                     }
@@ -275,11 +275,11 @@ namespace Net
                                         {
                                             const unsigned int peerId = GetNextPeerId();
                                             peer = std::make_shared<Peer>();
-                                            peer->Initialize(peerId, pPacket->address, m_Settings.latencySamples);
+                                            peer->Initialize(this, peerId, pPacket->address, m_Settings.timeout, m_Settings.latencySamples);
                                             m_Peers.insert({pPacket->address, peer});
                                         }
 
-                                        AddTrigger(new Core::OnPeerPreConnectTrigger(peer, pPacket->receiveTime));
+                                        m_TriggerQueue.Push(new Core::OnPeerPreConnectTrigger(peer, pPacket->receiveTime));
                                     }
                                 }
                                 break;
@@ -298,27 +298,12 @@ namespace Net
                                         if(m_Socket.Send(ackReponse, ackReponseSize, peer->m_SocketAddress) != ackReponseSize)
                                         {
                                             std::cout << "Failed to send acknowledgement message." << std::endl;
-                                            InternalDisconnectPeer(peer, true, true);
+                                            DisconnectPeer(peer);
                                             break;
                                         }
                                     }
                                     else if(peer->m_State == Core::PeerImp::Accepted)
                                     {
-                                        // Check if the timed out.
-                                        {
-                                            Core::SafeGuard sf_peers(m_PeersMutex);
-
-                                            auto handshakingPeerIt = m_HandshakingPeers.find(peer);
-                                            if(handshakingPeerIt == m_HandshakingPeers.end())
-                                            {
-                                                break;
-                                            }
-                                            else
-                                            {
-                                                m_HandshakingPeers.erase(handshakingPeerIt);
-                                            }
-                                        }
-
                                         // Caluclate initial latency.
                                         peer->m_Clock.Mutex.lock();
                                         const Time serverDelay = pPacket->receiveTime - peer->m_Clock.Value.StartTime();
@@ -337,31 +322,39 @@ namespace Net
                                         // Incorrect delay from peer.
                                         if(peerDelay > serverDelay)
                                         {
-                                            InternalDisconnectPeer(peer, true, true);
+                                            DisconnectPeer(peer);
                                             break;
                                         }
 
-                                        // Send ack.
-                                        ackReponse[1] = 1;
-                                        ackReponse[2] = 0;
-                                        if(m_Socket.Send(ackReponse, ackReponseSize, peer->m_SocketAddress) != ackReponseSize)
+                                        // Send acception. Mutex protect, in order to check if peer disconnected while executing acception.
                                         {
-                                            std::cout << "Failed to send acknowledgement message." << std::endl;
-                                            InternalDisconnectPeer(peer, true, true);
-                                            break;
+                                            Core::SafeGuard sf_peers(m_PeerDisconnectMutex);
+
+                                            if(peer->m_State != Core::PeerImp::Accepted)
+                                            {
+                                                break;
+                                            }
+
+                                            // Send ack.
+                                            ackReponse[1] = 1;
+                                            ackReponse[2] = 0;
+                                            if(m_Socket.Send(ackReponse, ackReponseSize, peer->m_SocketAddress) != ackReponseSize)
+                                            {
+                                                std::cout << "Failed to send acknowledgement message." << std::endl;
+                                                DisconnectPeer(peer);
+                                                break;
+                                            }
+
+                                            const Time latency = serverDelay - peerDelay;
+                                            peer->m_pLatency->Add(latency);
+                                            peer->m_State = Core::PeerImp::Connected;
+
+                                            peer->m_Clock.Mutex.lock();
+                                            peer->m_Clock.Value.Start();
+                                            peer->m_Clock.Mutex.unlock();
+
+                                            m_TriggerQueue.Push(new Core::OnPeerConnectTrigger(peer));
                                         }
-
-                                        const Time latency = serverDelay - peerDelay;
-                                        peer->m_pLatency->Add(latency);
-
-                                        // Peer is now connected.
-                                        peer->m_State = Core::PeerImp::Connected;
-
-                                        peer->m_Clock.Mutex.lock();
-                                        peer->m_Clock.Value.Start();
-                                        peer->m_Clock.Mutex.unlock();
-
-                                        AddTrigger(new Core::OnPeerConnectTrigger(peer));
                                     }
                                 }
                                 break;
@@ -381,7 +374,7 @@ namespace Net
                                         break;
                                     }
 
-                                    InternalDisconnectPeer(peer, true, false);
+                                    DisconnectPeer(peer);
                                 }
                                 break;
                                 default:
@@ -406,7 +399,7 @@ namespace Net
                                 break;
                             }
 
-                            InternalDisconnectPeer(peer, true, false);
+                            DisconnectPeer(peer);
                         }
                         break;
                         default:
@@ -419,22 +412,36 @@ namespace Net
 
                 Time lowestHandshakeTimeout = Time::Infinite;
 
-                // Handle handshake timeouts.
-                for(auto it = m_HandshakingPeers.begin(); it != m_HandshakingPeers.end();)
+                // Handle peer timeouts.
                 {
-                    m_PeersMutex.lock(); ///< Mutex lock.
+                    Core::SafeGuard sf_peers(m_PeersMutex);
 
+                    for(auto it = m_Peers.begin(); it != m_Peers.end(); it++)
+                    {
+                        auto peer = it->second;
+
+                        peer->m_Clock.Mutex.lock();
+                        const Time time =  peer->m_Clock.Value.LapsedTime();
+                        peer->m_Clock.Mutex.unlock();
+
+                        if(time.IsZero())
+                        {
+                            continue;
+                        }
+                    }
+
+                }
+                /*for(auto it = m_HandshakingPeers.begin(); it != m_HandshakingPeers.end();)
+                {
+                    Core::SafeGuard sf_peers(m_PeersMutex);
                     Core::SafeGuard sf_peerClock((*it)->m_Clock);
 
                     Time lapsed = (*it)->m_Clock.Value.LapsedTime();
                     if(lapsed >= m_Settings.handshakeTimeout)
                     {
                         std::shared_ptr<Peer> peer = *it;
-
                         it = m_HandshakingPeers.erase(it);
-
-                        m_PeersMutex.unlock();  ///< Mutex unlock.
-                        InternalDisconnectPeer(peer, true, true);
+                        DisconnectPeer(peer);
                         continue;
                     }
                     else
@@ -447,9 +454,9 @@ namespace Net
 
                         ++it;
                     }
+                }*/
 
-                    m_PeersMutex.unlock();  ///< Mutex unlock.
-                }
+
 
                 waitTime = lowestHandshakeTimeout;
                 if(waitTime != Time::Infinite)
@@ -480,7 +487,7 @@ namespace Net
 
             while(m_Stopping == false)
             {
-                m_TriggerThreadSemaphore.Wait();
+                m_TriggerQueue.semaphore.Wait();
 
                 if(m_Stopping)
                 {
@@ -488,17 +495,7 @@ namespace Net
                 }
 
                 // Get next trigger.
-                Core::Trigger * pTrigger = nullptr;
-                {
-                    Core::SafeGuard sf(m_TriggerQueue);
-                    if(m_TriggerQueue.Value.size() == 0)
-                    {
-                        continue;
-                    }
-
-                    pTrigger = m_TriggerQueue.Value.front();
-                    m_TriggerQueue.Value.pop();
-                }
+                Core::Trigger * pTrigger = m_TriggerQueue.Fetch();
 
                 // Handle current trigger.
                 switch(pTrigger->type)
@@ -536,7 +533,7 @@ namespace Net
 
                             if(m_Socket.Send(acceptReponse, acceptReponseSize, pCastTrigger->peer->m_SocketAddress) != acceptReponseSize)
                             {
-                                InternalDisconnectPeer(pCastTrigger->peer, true, false);
+                                DisconnectPeer(pCastTrigger->peer);
                                 std::cout << "Failed to send accept message." << std::endl;
                             }
 
@@ -547,7 +544,7 @@ namespace Net
                         }
                         else
                         {
-                            InternalDisconnectPeer(pCastTrigger->peer, false, true);
+                            DisconnectPeer(pCastTrigger->peer);
                         }
 
                     }
@@ -569,6 +566,21 @@ namespace Net
                     case Core::Trigger::OnPeerDisconnect:
                     {
                         Core::OnPeerDisconnectTrigger * pCastTrigger = static_cast<Core::OnPeerDisconnectTrigger *>(pTrigger);
+
+                        if(pCastTrigger->lastState == Core::PeerImp::Connected   ||
+                           pCastTrigger->lastState == Core::PeerImp::Handshaking ||
+                           pCastTrigger->lastState == Core::PeerImp::Accepted)
+                        {
+                            const unsigned char disconnectData[4] =
+                            {
+                                Core::Packet::DisconnectionType, 1, 0, Core::Packet::DisconnectionTypeKicked
+                            };
+
+                            if(m_Socket.Send(disconnectData, 4, pCastTrigger->peer->m_SocketAddress) != 4)
+                            {
+                                std::cout << "Failed to send disconnect message." << std::endl;
+                            }
+                        }
 
                         if(m_OnPeerDisconnect)
                         {
@@ -619,9 +631,9 @@ namespace Net
         m_ConnectionThreadSemaphore.NotifyOne();
         m_ConnectionThread.join();
 
-        m_TriggerThreadSemaphore.NotifyOne();
+        m_TriggerQueue.semaphore.NotifyOne();
         m_TriggerThread.join();
-
+/*
         // Disconnect peers
         for(auto it = m_Peers.begin(); it != m_Peers.end(); it++)
         {
@@ -654,11 +666,14 @@ namespace Net
         }
         m_PeerIds.clear();
         m_Peers.clear();
+        m_HandshakingPeers.clear();
 
         // Clear trigger queue
         while(m_TriggerQueue.Value.size())
         {
+            Core::Trigger * pTrigger = m_TriggerQueue.Value.front();
             m_TriggerQueue.Value.pop();
+            delete pTrigger;
         }
 
         // Return all packets and restore packet pool size.
@@ -667,13 +682,48 @@ namespace Net
             Core::Packet * pPacket = m_ConnectionPacketQueue.Value.front();
             m_ConnectionPacketQueue.Value.pop();
             m_PacketPool.Return(pPacket);
-        }
+        }*/
 
 
         // Destroy socket and settings.
         m_Socket.Close();
         m_Settings = Settings();
         m_Stopping = false;
+    }
+
+    void Server::DisconnectPeer(std::shared_ptr<Peer> peer)
+    {
+        if(!peer)
+        {
+            return;
+        }
+
+        Core::SafeGuard sf_peerDisconnect(m_PeerDisconnectMutex);
+
+        if(peer->m_State == Core::PeerImp::Disconnecting)
+        {
+            return;
+        }
+
+        {
+            Core::SafeGuard sf_peers(m_PeersMutex);
+
+            auto peerIt = m_Peers.find(peer->m_SocketAddress);
+            if(peerIt != m_Peers.end())
+            {
+                m_PeerIds.erase(peer->m_Id);
+                m_Peers.erase(peerIt);
+            }
+
+            m_TriggerQueue.Push(new Core::OnPeerDisconnectTrigger(peer, peer->m_State));
+        }
+
+        peer->m_State = Core::PeerImp::Disconnecting;
+    }
+
+    void Server::SetPeerTimeout(std::shared_ptr<Peer> peer, const Time & timeout)
+    {
+        peer->m_Timeout = timeout.AsMicroseconds();
     }
 
     void Server::SetOnPeerPreConnect(const std::function<bool(std::shared_ptr<Net::Peer> peer)> & function)

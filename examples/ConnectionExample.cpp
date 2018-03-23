@@ -22,6 +22,12 @@ int RunServer()
     // Set triggers.
     server.SetOnPeerPreConnect([&peers](std::shared_ptr<Net::Peer> peer) -> bool
     {
+        if(peers.size())
+        {
+            auto otherPeer = peers.begin();
+            (*otherPeer)->Disconnect();
+            peers.erase(otherPeer);
+        }
         peers.insert(peer);
 
         std::cout << "Peer is trying to connect: " << peer->Id() << std::endl;

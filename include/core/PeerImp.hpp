@@ -66,6 +66,7 @@ namespace Net
             friend class ServerImp;
             friend class PacketPool;
             friend class PeerTrigger;
+            friend class OnPeerDisconnectTrigger;
 
             /**
             * @breif Enumerator of current status of peer.
@@ -95,13 +96,16 @@ namespace Net
             * @breif Initialize peer class values.
             *
             */
-            void Initialize(const unsigned short id, const SocketAddress & socketAddress, const size_t latencySamples);
+            void Initialize(Server * pServer, const unsigned short id, const SocketAddress & socketAddress,
+                            const Time & timeout, const size_t latencySamples);
 
-            std::atomic<eState>     m_State;            ///< Current state of peer.
-            unsigned short          m_Id;               ///< Id of peer.
-            SocketAddress           m_SocketAddress;    ///< Ip and port of peer.
-            Safe<Clock>             m_Clock;            ///< Timer starting when accepted or connected, depending on state.
-            Core::Latency *         m_pLatency;         ///< Latency calculator.
+            Server *                        m_pServer;
+            std::atomic<eState>             m_State;            ///< Current state of peer.
+            unsigned short                  m_Id;               ///< Id of peer.
+            SocketAddress                   m_SocketAddress;    ///< Ip and port of peer.
+            std::atomic<unsigned long long> m_Timeout;          ///< Timeout of peer. Disconnected if not receving any valid synchronization packets for a while.
+            Safe<Clock>                     m_Clock;            ///< Timer starting when accepted or connected, depending on state.
+            Core::Latency *                 m_pLatency;         ///< Latency calculator.
 
         private:
 

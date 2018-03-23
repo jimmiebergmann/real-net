@@ -65,6 +65,7 @@
 		<Unit filename="../../include/Time.hpp" />
 		<Unit filename="../../include/Variable.hpp" />
 		<Unit filename="../../include/core/Build.hpp" />
+		<Unit filename="../../include/core/DataQueue.hpp" />
 		<Unit filename="../../include/core/DefaultLog.hpp" />
 		<Unit filename="../../include/core/EntityManagerImp.hpp" />
 		<Unit filename="../../include/core/Latency.hpp" />
@@ -80,6 +81,7 @@
 		<Unit filename="../../include/core/Trigger.hpp" />
 		<Unit filename="../../include/core/UdpSocket.hpp" />
 		<Unit filename="../../include/core/VariableImp.hpp" />
+		<Unit filename="../../include/core/inline/DataQueue.inl" />
 		<Unit filename="../../include/core/inline/EntityManagerImp.inl" />
 		<Unit filename="../../include/core/inline/VariableImp.inl" />
 		<Unit filename="../../include/core/platform/LinuxHeaders.hpp" />

@@ -23,58 +23,67 @@
 *
 */
 
-#include <Peer.hpp>
-#include <Server.hpp>
-
-namespace Net
+template <typename Item>
+DataQueue<Item>::DataQueue(Item defaultItem, const bool notify) :
+    m_DefaultItem(defaultItem),
+    m_Notify(notify)
 {
+}
 
-    Peer::Peer() :
-        PeerImp()
+template <typename Item>
+DataQueue<Item>::~DataQueue()
+{
+    while(m_Queue.size())
     {
+        m_Queue.pop();
+    }
+}
+
+template <typename Item>
+void DataQueue<Item>::Push(Item item)
+{
+    Core::SafeGuard sf_mutex(m_Mutex);
+
+    m_Queue.push(item);
+
+    if(m_Notify)
+    {
+        semaphore.NotifyOne();
+    }
+}
+
+template <typename Item>
+Item DataQueue<Item>::Fetch()
+{
+    Core::SafeGuard sf_mutex(m_Mutex);
+
+    if(m_Queue.size() == 0)
+    {
+        return m_DefaultItem;
     }
 
-    Peer::~Peer()
+    Item item = m_Queue.front();
+    m_Queue.pop();
+
+    return item;
+}
+
+template <typename Item>
+void DataQueue<Item>::Clear()
+{
+    while(m_Queue.size())
     {
+        m_Queue.pop();
     }
+}
 
-    unsigned short Peer::Id() const
+template <typename Item>
+void DataQueue<Item>::Clear(const std::function<void(Item item)> clearFunction)
+{
+    while(m_Queue.size())
     {
-        return m_Id;
+        Item item = m_Queue.front();
+        clearFunction(item);
+        m_Queue.pop();
     }
-
-    void Peer::Disconnect()
-    {
-        m_pServer->DisconnectPeerByPointer(this);
-    }
-
-    const SocketAddress & Peer::Address() const
-    {
-        return m_SocketAddress;
-    }
-
-    Time Peer::Latency() const
-    {
-        Time time;
-        m_pLatency->Get(time);
-        return time;
-    }
-
-    Time Peer::ConnectedTime()
-    {
-        if(m_State != Connected)
-        {
-            return Time::Zero;
-        }
-
-        Core::SafeGuard sf_clock(m_Clock);
-        return m_Clock.Value.LapsedTime();
-    }
-
-    void Peer::SetTimeout(const Time & timeout)
-    {
-        //std::shared_ptr<Peer> peer(this);
-        //m_pServer->SetPeerTimeout(peer, timeout);
-    }
-
 }

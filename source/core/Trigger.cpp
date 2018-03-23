@@ -63,8 +63,9 @@ namespace Net
         }
 
 
-        OnPeerDisconnectTrigger::OnPeerDisconnectTrigger(std::shared_ptr<Peer> p_Peer) :
-            PeerTrigger(p_Peer, OnPeerDisconnect)
+        OnPeerDisconnectTrigger::OnPeerDisconnectTrigger(std::shared_ptr<Peer> p_Peer, const PeerImp::eState p_LastState) :
+            PeerTrigger(p_Peer, OnPeerDisconnect),
+            lastState(p_LastState)
         {
         }
 

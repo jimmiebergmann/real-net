@@ -31,7 +31,7 @@ namespace Net
 {
 
     /**
-    * @breif Class representing time.
+    * @breif Class representing overflow protected time, from Zero to Infinite.
     *
     */
     class Time
@@ -76,6 +76,12 @@ namespace Net
         *
         */
         unsigned long long AsMicroseconds() const;
+
+        /**
+        * @breif Check if time is zero.
+        *
+        */
+        bool IsZero() const;
 
         /**
         * @breif Value representing infinite time.
@@ -158,12 +164,14 @@ namespace Net
         *
         */
         Time operator * (const unsigned long long & value) const;
+        Time operator * (const double & value) const;
 
         /**
         * @breif Division operator.
         *
         */
         Time operator / (const unsigned long long & value) const;
+        Time operator / (const double & value) const;
 
         /**
         * @breif Modulus operator.

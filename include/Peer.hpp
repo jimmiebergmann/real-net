@@ -53,6 +53,13 @@ namespace Net
         virtual ~Peer();
 
         /**
+        * @breif Disconnect peer.
+        *        Will trigger the server "OnPeerDisconnect" function, if the peer is not yet disconnected.
+        *
+        */
+        void Disconnect();
+
+        /**
         * @breif Get id of peer.
         *
         */
@@ -75,6 +82,13 @@ namespace Net
         *
         */
         Time ConnectedTime();
+
+        /**
+        * @breif Set connection timeout.
+        *        If timeout = Zero, the peer will instantly be disconnected.
+        *
+        */
+        void SetTimeout(const Time & timeout);
 
     };
 

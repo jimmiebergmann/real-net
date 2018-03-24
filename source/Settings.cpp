@@ -32,7 +32,8 @@ namespace Net
         port(0),
         maxConnections(0),
         host(Address::Zero),
-        timeout(Seconds(30)),
+        timeout(Seconds(30.0f)),
+        handshakeTimeout(Seconds(15.0f)),
         latencySamples(7)
     {
     }

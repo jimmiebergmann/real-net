@@ -3,15 +3,6 @@
 #include <set>
 #include <iostream>
 
-void PrintPeers(std::set<std::shared_ptr<Net::Peer>> & peers)
-{
-    std::cout << "Peer count: " << peers.size() << std::endl;
-    for(auto it = peers.begin(); it != peers.end(); it++)
-    {
-        std::cout << (*it)->Id() << ": Latency: " << (*it)->Latency().AsMicroseconds() << "   Connected for: " << (*it)->ConnectedTime().AsSeconds() << std::endl;
-    }
-    std::cout << std::endl;
-}
 
 int RunServer()
 {
@@ -24,82 +15,58 @@ int RunServer()
     {
         if(peer->State() != Net::Peer::Handshaking)
         {
-            throw std::exception("Peer is not handshaking.");
+            throw Net::Exception("Peer is not handshaking.");
         }
-
-       /* if(peers.size())
-        {
-            auto otherPeer = peers.begin();
-            (*otherPeer)->Disconnect();
-            peers.erase(otherPeer);
-        }*/
 
         if(peers.find(peer) != peers.end())
         {
-            std::cout << "ADDING DUPLICATE OF PEER." << std::endl;
+            throw Net::Exception("Trying to add duplicate of peer.");
         }
 
+        /*if(peers.size())
+        {
+            auto otherPeer = peers.begin();
+            (*otherPeer)->Kick();
+            peers.erase(otherPeer);
+        }*/
         peers.insert(peer);
-
-
 
         std::cout << "Peer is trying to connect: " << peer->Id() << std::endl;
 
-
-
-        PrintPeers(peers);
-
         return true;
     });
+
     server.SetOnPeerConnect([&peers](std::shared_ptr<Net::Peer> peer)
     {
         if(peer->State() != Net::Peer::Connected)
         {
-            throw std::exception("Peer is not connected.");
+            throw Net::Exception("Peer is not connected.");
         }
 
-        std::cout << "Peer Connected and disconnected by server: " << peer->Id() << std::endl;
+        auto peerIt = peers.find(peer);
+        if(peerIt == peers.end())
+        {
+             throw Net::Exception("SetOnPeerConnect: Unkown peer: " + std::to_string(peer->Id()));
+        }
 
-        peer->Kick();
-
-        PrintPeers(peers);
+        std::cout << "Peer Connected: " << peer->Id() << std::endl;
 
         return true;
     });
-    server.SetOnPeerDisconnect([&peers](std::shared_ptr<Net::Peer> peer, const Net::Peer::eReason reason)
+
+    server.SetOnPeerDisconnect([&peers](std::shared_ptr<Net::Peer> peer, const Net::Peer::Disconnect::eReason reason)
     {
         if(peer->State() != Net::Peer::Disconnected)
         {
-            throw std::exception("Peer is not disconnected.");
+            throw Net::Exception("Peer is not disconnected.");
         }
-
-        peers.erase(peer);
 
         std::cout << "Peer Disconnected: " << peer->Id() << " ,Reason: " << reason << "  ,Peer count: " << peers.size() << std::endl;
 
-        /*if(reason == Net::Peer::Kicked)
-        {
-        }
-        else if(reason == Net::Peer::Banned)
-        {
-        }
-        else if(reason == Net::Peer::Left)
-        {
-        }
-        else if(reason == Net::Peer::Timeout)
-        {
-        }
-        else if(reason == Net::Peer::InvalidPacket)
-        {
-        }*/
-
-        //PrintPeers(peers);
-
-        return true;
     });
 
     // Start server.
-    server.Host(12345, 100);
+    server.Host({12345, 100, Net::Address(Net::Address::Any), Net::Seconds(5.0f), Net::Seconds(2.0f)});
 
     std::cout << "Server is running." << std::endl;
     std::cout << "Enter any character to exit." << std::endl;

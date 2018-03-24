@@ -77,21 +77,16 @@ namespace Net
         */
         void Stop();
 
-        /**
-        * @breif Disconnect peer from server.
-        *
-        */
-        virtual void DisconnectPeer(std::shared_ptr<Peer> peer);
+       /* void SetPeerTimeout(std::shared_ptr<Peer> peer, const Time & timeout);
 
 
-        void SetPeerTimeout(std::shared_ptr<Peer> peer, const Time & timeout);
-
-        /**
         * @breif Set the "On peer pre connect" trigger. Overloads the virtual function.
         *
         * @throw Exception If function already is set, or if the server is currently hosted.
         *
         */
+
+
         void SetOnPeerPreConnect(const std::function<bool(std::shared_ptr<Net::Peer> peer)> & function);
 
         /**
@@ -108,7 +103,8 @@ namespace Net
         * @throw Exception If function already is set, or if the server is currently hosted.
         *
         */
-        void SetOnPeerDisconnect(const std::function<void(std::shared_ptr<Net::Peer> peer, const Peer::eReason reason)> & function);
+        void SetOnPeerDisconnect(const std::function<void(std::shared_ptr<Net::Peer> peer,
+                                                          Peer::Disconnect::eReason reason)> & function);
 
         /**
         * @breif Get current server settings.
@@ -134,7 +130,8 @@ namespace Net
         /**
         * @breif Trigger function called if peer disconnects.
         */
-        virtual void OnPeerDisconnect(std::shared_ptr<Net::Peer> peer, const Peer::eReason reason);
+        virtual void OnPeerDisconnect(std::shared_ptr<Net::Peer> peer,
+                                      const Peer::Disconnect::eReason reason);
 
     };
 

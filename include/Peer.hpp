@@ -55,14 +55,19 @@ namespace Net
         * @breif Disconnection reasons.
         *
         */
-        enum eReason
+        struct Disconnect
         {
-            Kicked,
-            Banned,
-            Left,
-            Timeout,
-            InvalidPacket
+            enum eReason
+            {
+                Kicked,
+                Banned,
+                Left,
+                Timeout,
+                InvalidPacket,
+                InternalError
+            };
         };
+
 
         /**
         * @breif Constructor.

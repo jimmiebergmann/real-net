@@ -44,7 +44,7 @@ namespace Net
 
     void Peer::Kick()
     {
-        m_pServer->DisconnectPeerByPointer(this);
+        m_pServer->DisconnectPeerByPointer(this, Disconnect::Kicked);
     }
 
     const SocketAddress & Peer::Address() const

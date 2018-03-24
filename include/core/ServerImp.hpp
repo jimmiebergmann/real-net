@@ -55,12 +55,14 @@ namespace Net
 
             /**
             * @breif Disconnect peer from server.
-            *        This function is primary used by Peer class, allowing them to disconnect themselves.
             *
             */
-            virtual void DisconnectPeer(std::shared_ptr<Peer> peer) = 0;
+            void DisconnectPeer(std::shared_ptr<Peer> peer, const Peer::Disconnect::eReason reason,
+                                const bool triggerFunction = true, const bool sendResponse = true);
 
         protected:
+
+            typedef std::map<SocketAddress, std::shared_ptr<Peer>> PeerMap; ///< Map of peers, address as key.
 
             /**
             * @breif Constructor.
@@ -69,12 +71,21 @@ namespace Net
             ServerImp();
 
             /**
-            * @breif Disconnect peer by raw pointer.
+            * @breif Disconnect peer from server by raw pointer.
+            *        This function is primary used by Peer class, allowing them to disconnect themselves.
             *
             * @throw Exception  If raw pointer is unkown to server.
             *
             */
-            void DisconnectPeerByPointer(Peer * peer);
+            void DisconnectPeerByPointer(Peer * peer, const Peer::Disconnect::eReason reason);
+
+            /**
+            * @breif Disconnect peer from server by iterator.
+            *        This function is primary used by timeout checking.
+            *        No lock for peer map is used and the function will return iterator from map::erase.
+            *
+            */
+            PeerMap::iterator DisconnectPeerByIterator(PeerMap::iterator it, const Peer::Disconnect::eReason reason);
 
             /**
             * @breif Add packet to connection queue.
@@ -97,33 +108,34 @@ namespace Net
             */
             unsigned int GetNextPeerId();
 
-            Settings                                        m_Settings;                  ///< Server settings.
-            std::atomic<bool>                               m_Hosted;                    ///< Is the server currently hosted?
-            std::atomic<bool>                               m_Stopping;                  ///< Is the server currently stopping?
-            std::mutex                                      m_HostStopMutex;             ///< Mutex for hosting and stopping server.
-            std::thread                                     m_ReceiveThread;             ///< Thread for receiving packets.
-            std::thread                                     m_ReliableThread;            ///< Thread for handling reliable packets.
+            Settings                                         m_Settings;                  ///< Server settings.
+            std::atomic<bool>                                m_Hosted;                    ///< Is the server currently hosted?
+            std::atomic<bool>                                m_Stopping;                  ///< Is the server currently stopping?
+            std::mutex                                       m_HostStopMutex;             ///< Mutex for hosting and stopping server.
+            std::thread                                      m_ReceiveThread;             ///< Thread for receiving packets.
+            std::thread                                      m_ReliableThread;            ///< Thread for handling reliable packets.
 
-            std::mutex                                      m_PeersMutex;                ///< Mutex lock for m_Peers, m_ConnectedPeers and m_HandshakingPeers.
-            std::map<SocketAddress, std::shared_ptr<Peer>>  m_Peers;                     ///< Map of all peers. Address as key.
-            std::set<unsigned int>                          m_PeerIds;                   ///< Set of all peer IDs in use.
-            std::atomic<unsigned int>                       m_LastPeerId;                ///< Last peer id in use.
+            std::mutex                                       m_PeersMutex;                ///< Mutex lock for m_Peers, m_ConnectedPeers and m_HandshakingPeers.
+            PeerMap                                          m_Peers;                     ///< Map of all peers. Address as key.
+            std::set<unsigned int>                           m_PeerIds;                   ///< Set of all peer IDs in use.
+            std::atomic<unsigned int>                        m_LastPeerId;                ///< Last peer id in use.
 
-            UdpSocket                                       m_Socket;                    ///< Socket for receiving and sending data.
-            SocketSelector                                  m_SocketSelector;            ///< Socket selector for receive socket.
-            PacketPool                                      m_PacketPool;                ///< Pool of packets
+            UdpSocket                                        m_Socket;                    ///< Socket for receiving and sending data.
+            SocketSelector                                   m_SocketSelector;            ///< Socket selector for receive socket.
+            PacketPool                                       m_PacketPool;                ///< Pool of packets
 
-            std::mutex                                      m_PeerConnectMutex;          ///< Mutex for trigger and connection thread.
-            std::mutex                                      m_PeerDisconnectMutex;       ///< Mutex for locking Disconnect() function.
-            std::thread                                     m_ConnectionThread;          ///< Thread for handling incoming and established connections.
-            Semaphore                                       m_ConnectionThreadSemaphore; ///< Sempahore for triggering the connection thread.
-            Safe<std::queue<Packet *>>                      m_ConnectionPacketQueue;     ///< Queue of connection packets.
+            std::mutex                                       m_PeerConnectMutex;          ///< Mutex for trigger and connection thread.
+            std::mutex                                       m_PeerDisconnectMutex;       ///< Mutex for locking Disconnect() function.
+            std::thread                                      m_ConnectionThread;          ///< Thread for handling incoming and established connections.
+            Semaphore                                        m_ConnectionThreadSemaphore; ///< Sempahore for triggering the connection thread.
+            Safe<std::queue<Packet *>>                       m_ConnectionPacketQueue;     ///< Queue of connection packets.
 
-            std::thread                                     m_TriggerThread;             ///< Thread handling all trigger functions.
-            DataQueue<Trigger *>                            m_TriggerQueue;              ///< Queue of triggers.
-            std::function<bool(std::shared_ptr<Peer>)>      m_OnPeerPreConnect;          ///< Replacing virtual function if set.
-            std::function<void(std::shared_ptr<Peer>)>      m_OnPeerConnect;             ///< Replacing virtual function if set.
-            std::function<void(std::shared_ptr<Peer>)>      m_OnPeerDisconnect;          ///< Replacing virtual function if set.
+            std::thread                                      m_TriggerThread;             ///< Thread handling all trigger functions.
+            DataQueue<Trigger *>                             m_TriggerQueue;              ///< Queue of triggers.
+            std::function<bool(std::shared_ptr<Peer>)>       m_OnPeerPreConnect;          ///< Replacing virtual function if set.
+            std::function<void(std::shared_ptr<Peer>)>       m_OnPeerConnect;             ///< Replacing virtual function if set.
+            std::function<void(std::shared_ptr<Peer>,
+                               Peer::Disconnect::eReason)>   m_OnPeerDisconnect;          ///< Replacing virtual function if set.
 
 
         private:

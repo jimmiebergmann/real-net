@@ -64,11 +64,12 @@ namespace Net
 
 
         OnPeerDisconnectTrigger::OnPeerDisconnectTrigger(std::shared_ptr<Peer> p_Peer,
-                                                         const Peer::eReason p_Reason,
-                                                         const PeerImp::eInternalState p_LastState) :
+                                                         const Peer::Disconnect::eReason p_Reason,
+                                                         const bool p_TriggerFunction, const bool p_SendResponse) :
             PeerTrigger(p_Peer, OnPeerDisconnect),
             reason(p_Reason),
-            lastState(p_LastState)
+            triggerFunction(p_TriggerFunction),
+            sendResponse(p_SendResponse)
         {
         }
 

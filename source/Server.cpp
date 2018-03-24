@@ -143,7 +143,7 @@ namespace Net
                     case Core::Packet::ConnectionType:
                     case Core::Packet::DisconnectionType:
                     {
-                        QueueConnectionPacket(pPacket);
+                        m_ConnectionPacketQueue.Push(pPacket);
                     }
                     break;
                     case Core::Packet::SynchronizationType:
@@ -206,7 +206,7 @@ namespace Net
 
             while(m_Stopping == false)
             {
-                m_ConnectionThreadSemaphore.WaitFor(waitTime);
+                m_ConnectionPacketQueue.semaphore.WaitFor(waitTime);
 
                 if(m_Stopping)
                 {
@@ -214,7 +214,7 @@ namespace Net
                 }
 
                 // Handle connection packets
-                Core::Packet * pPacket = GetConnectionPacket();
+                Core::Packet * pPacket = m_ConnectionPacketQueue.Fetch();
                 std::shared_ptr<Peer> peer;
                 if(pPacket)
                 {
@@ -591,7 +591,7 @@ namespace Net
                                     std::cout << "Failed to send accept message." << std::endl;
                                 }
 
-                                m_ConnectionThreadSemaphore.NotifyOne();
+                                m_ConnectionPacketQueue.semaphore.NotifyOne();
                             }
                             else
                             {
@@ -693,61 +693,40 @@ namespace Net
 
         m_ReliableThread.join();
 
-        m_ConnectionThreadSemaphore.NotifyOne();
+        m_ConnectionPacketQueue.semaphore.NotifyOne();
         m_ConnectionThread.join();
 
         m_TriggerQueue.semaphore.NotifyOne();
         m_TriggerThread.join();
-/*
+
         // Disconnect peers
         for(auto it = m_Peers.begin(); it != m_Peers.end(); it++)
         {
             auto peer = it->second;
 
-            if(peer->m_State == Core::PeerImp::Connected)
+            const unsigned char disconnectData[4] =
             {
-                const unsigned char disconnectData[4] =
-                {
-                    Core::Packet::DisconnectionType, 1, 0, Core::Packet::DisconnectionTypeKicked
-                };
+                Core::Packet::DisconnectionType, 1, 0, Core::Packet::DisconnectionTypeClosed
+            };
 
-                if(m_Socket.Send(disconnectData, 4, peer->m_SocketAddress) != 4)
-                {
-                    std::cout << "Failed to send disconnect message." << std::endl;
-                }
-            }
-            else if(peer->m_State == Core::PeerImp::Accepted)
+            if(m_Socket.Send(disconnectData, 4, peer->m_SocketAddress) != 5)
             {
-                const unsigned char rejectData[5] =
-                {
-                    Core::Packet::ConnectionType, 1, 0, Core::Packet::ConnectionTypeReject, Core::Packet::RejectTypeClosed
-                };
-
-                if(m_Socket.Send(rejectData, 5, peer->m_SocketAddress) != 5)
-                {
-                    std::cout << "Failed to send reject message." << std::endl;
-                }
+                std::cout << "Failed to send disconnection message." << std::endl;
             }
         }
-        m_PeerIds.clear();
         m_Peers.clear();
-        m_HandshakingPeers.clear();
+        m_PeerIds.clear();
 
-        // Clear trigger queue
-        while(m_TriggerQueue.Value.size())
-        {
-            Core::Trigger * pTrigger = m_TriggerQueue.Value.front();
-            m_TriggerQueue.Value.pop();
-            delete pTrigger;
-        }
 
-        // Return all packets and restore packet pool size.
-        while(m_ConnectionPacketQueue.Value.size())
+        // Clear data queues.
+        m_TriggerQueue.Clear([](Core::Trigger * trigger)
         {
-            Core::Packet * pPacket = m_ConnectionPacketQueue.Value.front();
-            m_ConnectionPacketQueue.Value.pop();
-            m_PacketPool.Return(pPacket);
-        }*/
+            delete trigger;
+        });
+        m_ConnectionPacketQueue.Clear([this](Core::Packet * packet)
+        {
+            m_PacketPool.Return(packet);
+        });
 
 
         // Destroy socket and settings.

@@ -42,9 +42,7 @@ int RunServer()
         {
             throw Net::Exception("Peer is not connected.");
         }
-
-        auto peerIt = peers.find(peer);
-        if(peerIt == peers.end())
+        if(peers.find(peer) == peers.end())
         {
              throw Net::Exception("SetOnPeerConnect: Unkown peer: " + std::to_string(peer->Id()));
         }
@@ -60,8 +58,14 @@ int RunServer()
         {
             throw Net::Exception("Peer is not disconnected.");
         }
+        if(peers.find(peer) == peers.end())
+        {
+             throw Net::Exception("SetOnPeerConnect: Unkown peer: " + std::to_string(peer->Id()));
+        }
 
-        std::cout << "Peer Disconnected: " << peer->Id() << " ,Reason: " << reason << "  ,Peer count: " << peers.size() << std::endl;
+        peers.erase(peer);
+
+        std::cout << "Peer Disconnected: " << peer->Id() << ",  Reason: " << reason << ",  Peer count: " << peers.size() << std::endl;
 
     });
 

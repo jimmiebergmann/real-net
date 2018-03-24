@@ -88,21 +88,6 @@ namespace Net
             PeerMap::iterator DisconnectPeerByIterator(PeerMap::iterator it, const Peer::Disconnect::eReason reason);
 
             /**
-            * @breif Add packet to connection queue.
-            *        Packets in the connection queue will be handled by the connection thread.
-            *
-            */
-            void QueueConnectionPacket(Packet * packet);
-
-            /**
-            * @breif Get connect packet from queue.
-            *
-            * @return Pointer to packet, null if queue is empty.
-            *
-            */
-            Packet * GetConnectionPacket();
-
-            /**
             * @breif Get the next free peer ID.
             *
             */
@@ -127,8 +112,7 @@ namespace Net
             std::mutex                                       m_PeerConnectMutex;          ///< Mutex for trigger and connection thread.
             std::mutex                                       m_PeerDisconnectMutex;       ///< Mutex for locking Disconnect() function.
             std::thread                                      m_ConnectionThread;          ///< Thread for handling incoming and established connections.
-            Semaphore                                        m_ConnectionThreadSemaphore; ///< Sempahore for triggering the connection thread.
-            Safe<std::queue<Packet *>>                       m_ConnectionPacketQueue;     ///< Queue of connection packets.
+            DataQueue<Packet *>                              m_ConnectionPacketQueue;     ///< Queue of connection packets.
 
             std::thread                                      m_TriggerThread;             ///< Thread handling all trigger functions.
             DataQueue<Trigger *>                             m_TriggerQueue;              ///< Queue of triggers.

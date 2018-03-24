@@ -71,6 +71,8 @@ Item DataQueue<Item>::Fetch()
 template <typename Item>
 void DataQueue<Item>::Clear()
 {
+    Core::SafeGuard sf_mutex(m_Mutex);
+
     while(m_Queue.size())
     {
         m_Queue.pop();
@@ -80,6 +82,8 @@ void DataQueue<Item>::Clear()
 template <typename Item>
 void DataQueue<Item>::Clear(const std::function<void(Item item)> clearFunction)
 {
+    Core::SafeGuard sf_mutex(m_Mutex);
+
     while(m_Queue.size())
     {
         Item item = m_Queue.front();

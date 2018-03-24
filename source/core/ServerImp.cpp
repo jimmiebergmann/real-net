@@ -67,6 +67,7 @@ namespace Net
             m_Stopping(false),
             m_LastPeerId(0),
             m_PacketPool(10),
+            m_ConnectionPacketQueue(nullptr, true),
             m_TriggerQueue(nullptr, true),
             m_OnPeerPreConnect(nullptr),
             m_OnPeerConnect(nullptr),
@@ -114,29 +115,6 @@ namespace Net
 
             DisconnectPeer(peer, reason, true, true);
 
-        }
-
-        void ServerImp::QueueConnectionPacket(Packet * packet)
-        {
-            Core::SafeGuard sf(m_ConnectionPacketQueue);
-
-            m_ConnectionPacketQueue.Value.push(packet);
-            m_ConnectionThreadSemaphore.NotifyOne();
-        }
-
-        Packet * ServerImp::GetConnectionPacket()
-        {
-            Core::SafeGuard sf_peer(m_ConnectionPacketQueue);
-
-            Packet * pPacket = nullptr;
-
-            if(m_ConnectionPacketQueue.Value.size())
-            {
-                pPacket = m_ConnectionPacketQueue.Value.front();
-                m_ConnectionPacketQueue.Value.pop();
-            }
-
-            return pPacket;
         }
 
         unsigned int ServerImp::GetNextPeerId()

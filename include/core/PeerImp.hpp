@@ -72,12 +72,13 @@ namespace Net
             * @breif Enumerator of current status of peer.
             *
             */
-            enum eState
+
+            enum eInternalState
             {
-                Handshaking,
-                Accepted,
-                Connected,
-                Disconnecting
+                InternalHandshaking,
+                InternalAccepted,
+                InternalConnected,
+                InternalDisconnected
             };
 
             /**
@@ -99,12 +100,19 @@ namespace Net
             void Initialize(Server * pServer, const unsigned short id, const SocketAddress & socketAddress,
                             const Time & timeout, const size_t latencySamples);
 
-            Server *                        m_pServer;
-            std::atomic<eState>             m_State;            ///< Current state of peer.
+            /**
+            * @breif Set internal state of peer.
+            *
+            */
+            void SetState(const eInternalState state);
+
+
+            Server *                        m_pServer;          ///< Pointer to server.
+            mutable Safe<eInternalState>    m_State;            ///< Current state of peer.
             unsigned short                  m_Id;               ///< Id of peer.
             SocketAddress                   m_SocketAddress;    ///< Ip and port of peer.
             std::atomic<unsigned long long> m_Timeout;          ///< Timeout of peer. Disconnected if not receving any valid synchronization packets for a while.
-            Safe<Clock>                     m_Clock;            ///< Timer starting when accepted or connected, depending on state.
+            mutable Safe<Clock>             m_Clock;            ///< Timer starting when accepted or connected, depending on state.
             Core::Latency *                 m_pLatency;         ///< Latency calculator.
 
         private:

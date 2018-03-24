@@ -36,6 +36,16 @@ namespace Net
     public:
 
         /**
+        * @breif State enumerator
+        *
+        */
+        enum eState
+        {
+            Stopped,
+            Started
+        };
+
+        /**
         * @breif Constructor.
         *
         */
@@ -54,6 +64,12 @@ namespace Net
         void Stop();
 
         /**
+        * @breif Reset clock.
+        *
+        */
+        void Reset();
+
+        /**
         * @breif Get start time.
         *
         */
@@ -66,6 +82,12 @@ namespace Net
         const Time & StopTime() const;
 
         /**
+        * @breif Get total paused time.
+        *
+        */
+        const Time PausedTime() const;
+
+        /**
         * @breif Get lapsed time.
         *
         * @return Lapsed time since Start time if clock is still running(not stopped),
@@ -75,6 +97,12 @@ namespace Net
         Time LapsedTime() const;
 
         /**
+        * @breif Get current state.
+        *
+        */
+        eState State() const;
+
+        /**
         * @breif Get system time.
         *
         */
@@ -82,8 +110,10 @@ namespace Net
 
     private:
 
-        Time m_StartTime;   ///< The start time
-        Time m_StopTime;    ///< The stop time.
+        eState  m_State;        ///< Current state of clock.
+        Time    m_StartTime;    ///< The start time
+        Time    m_StopTime;     ///< The stop time.
+        Time    m_PausedTime;   ///< Amount of paused time.
 
     };
 

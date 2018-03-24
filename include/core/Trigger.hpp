@@ -90,9 +90,13 @@ namespace Net
 
         public:
 
-            OnPeerDisconnectTrigger(std::shared_ptr<Peer> peer, const PeerImp::eState lastState);
+            OnPeerDisconnectTrigger(std::shared_ptr<Peer> peer,
+                                    const Peer::eReason reason,
+                                    const PeerImp::eInternalState lastState);
 
-            const PeerImp::eState lastState;
+            const Peer::eReaseon            reason;
+            const PeerImp::eInternalState   lastState;
+
 
         };
     }

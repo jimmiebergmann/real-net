@@ -41,6 +41,30 @@ namespace Net
     public:
 
         /**
+        * @breif State of peer.
+        *
+        */
+        enum eState
+        {
+            Handshaking,
+            Connected,
+            Disconnected
+        };
+
+        /**
+        * @breif Disconnection reasons.
+        *
+        */
+        enum eReason
+        {
+            Kicked,
+            Banned,
+            Left,
+            Timeout,
+            InvalidPacket
+        };
+
+        /**
         * @breif Constructor.
         *
         */
@@ -53,11 +77,10 @@ namespace Net
         virtual ~Peer();
 
         /**
-        * @breif Disconnect peer.
-        *        Will trigger the server "OnPeerDisconnect" function, if the peer is not yet disconnected.
+        * @breif Kick peer from server.
         *
         */
-        void Disconnect();
+        void Kick();
 
         /**
         * @breif Get id of peer.
@@ -72,6 +95,12 @@ namespace Net
         const SocketAddress & Address() const;
 
         /**
+        * @breif Get current state of peer.
+        *
+        */
+        eState State() const;
+
+        /**
         * @breif Get latency of peer.
         *
         */
@@ -81,7 +110,7 @@ namespace Net
         * @breif Get connection time.
         *
         */
-        Time ConnectedTime();
+        Time ConnectedTime() const;
 
         /**
         * @breif Set connection timeout.

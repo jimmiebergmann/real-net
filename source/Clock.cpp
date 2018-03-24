@@ -30,23 +30,50 @@ namespace Net
 {
 
     Clock::Clock() :
+        m_State(Stopped),
         m_StartTime(Time::Zero),
-        m_StopTime(Time::Zero)
+        m_StopTime(Time::Zero),
+        m_PausedTime(Time::Zero)
     {
     }
 
     void Clock::Start()
     {
-        m_StartTime = SystemTime();
+        if(m_State != Stopped)
+        {
+            return;
+        }
+        m_State = Started;
+
+        if(m_StartTime.IsZero())
+        {
+            m_StartTime = SystemTime();
+        }
+
+        if(m_StopTime.IsZero() == false)
+        {
+            m_PausedTime += SystemTime() - m_StopTime;
+        }
         m_StopTime = Time::Zero;
     }
 
     void Clock::Stop()
     {
-        if(m_StopTime.IsZero() == false)
+        if(m_State != Started)
         {
-            m_StopTime = SystemTime();
+            return;
         }
+        m_State = Stopped;
+
+        m_StopTime = SystemTime();
+    }
+
+    void Clock::Reset()
+    {
+        m_State = Stopped;
+        m_StartTime = Time::Zero;
+        m_StopTime = Time::Zero;
+        m_PausedTime = Time::Zero;
     }
 
     const Time & Clock::StartTime() const
@@ -59,9 +86,29 @@ namespace Net
         return m_StopTime;
     }
 
+    const Time Clock::PausedTime() const
+    {
+        if(m_State == Stopped)
+        {
+            if(m_StopTime.IsZero() == true)
+            {
+                return Time::Zero;
+            }
+
+            return m_PausedTime + (SystemTime() - m_StopTime);
+        }
+
+        return m_PausedTime;
+    }
+
     Time Clock::LapsedTime() const
     {
-        return m_StopTime.IsZero() == false ? m_StopTime : (SystemTime() - m_StartTime);
+        return m_State == Stopped ? ((m_StopTime - m_StartTime) - m_PausedTime) : ((SystemTime() - m_StartTime) - m_PausedTime);
+    }
+
+    Clock::eState Clock::State() const
+    {
+        return m_State;
     }
 
     Time Clock::SystemTime()

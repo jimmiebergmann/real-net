@@ -108,12 +108,12 @@ namespace Net
             std::map<SocketAddress, std::shared_ptr<Peer>>  m_Peers;                     ///< Map of all peers. Address as key.
             std::set<unsigned int>                          m_PeerIds;                   ///< Set of all peer IDs in use.
             std::atomic<unsigned int>                       m_LastPeerId;                ///< Last peer id in use.
-            std::set<std::shared_ptr<Peer>>                 m_HandshakingPeers;          ///< Set of all handshaking peers.
 
             UdpSocket                                       m_Socket;                    ///< Socket for receiving and sending data.
             SocketSelector                                  m_SocketSelector;            ///< Socket selector for receive socket.
             PacketPool                                      m_PacketPool;                ///< Pool of packets
 
+            std::mutex                                      m_PeerConnectMutex;          ///< Mutex for trigger and connection thread.
             std::mutex                                      m_PeerDisconnectMutex;       ///< Mutex for locking Disconnect() function.
             std::thread                                     m_ConnectionThread;          ///< Thread for handling incoming and established connections.
             Semaphore                                       m_ConnectionThreadSemaphore; ///< Sempahore for triggering the connection thread.

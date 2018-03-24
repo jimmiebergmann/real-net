@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
+#include <iomanip>
 #include <list>
 
 #define REALNET_TEST
@@ -22,7 +23,7 @@
 #include <core/Latency.hpp>
 
 
-#define GTEST_PRINT "\033[0;32m" << "[          ] " << "\033[0;0m"
+#define GTEST_PRINT(message) std::cout << "\033[0;32m" << "[          ] " << "\033[0;0m" << message << std::endl
 
 namespace Net
 {
@@ -164,12 +165,12 @@ namespace Net
 
     }
 
-    TEST(Clock, tests)
+    TEST(Clock, StartStop)
     {
         {
             Net::Clock clock;
             clock.Start();
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            std::this_thread::sleep_for(std::chrono::microseconds(100ULL));
             clock.Stop();
             EXPECT_TRUE(clock.LapsedTime() >= Net::Microseconds(100ULL));
         }
@@ -180,10 +181,105 @@ namespace Net
             Net::Time lastTime = Net::Time::Zero;
             for(size_t i = 0; i < 10; i++)
             {
-               std::this_thread::sleep_for(std::chrono::microseconds(100));
+               std::this_thread::sleep_for(std::chrono::microseconds(100ULL));
                EXPECT_TRUE(clock.LapsedTime() >= lastTime);
                lastTime = clock.LapsedTime();
             }
+        }
+
+        /*{
+            Net::Clock clock;
+            Net::Time lapsedTime;
+            Net::Time pausedTime;
+
+            for(size_t i = 0; i < 2; i++)
+            {
+                const size_t cellWidth = 20;
+                GTEST_PRINT(std::setw(cellWidth) << "Lapsed" << std::setw(cellWidth) << "Paused");
+
+                GTEST_PRINT(std::setw(cellWidth) << clock.LapsedTime().AsMicroseconds() << std::setw(cellWidth) << clock.PausedTime().AsMicroseconds());
+
+                clock.Start();
+                std::this_thread::sleep_for(std::chrono::microseconds(1000ULL));
+                clock.Stop();
+
+
+                GTEST_PRINT(std::setw(cellWidth) << clock.LapsedTime().AsMicroseconds() << std::setw(cellWidth) << clock.PausedTime().AsMicroseconds());
+
+                lapsedTime = clock.LapsedTime();
+                EXPECT_TRUE(lapsedTime >= Net::Microseconds(1000ULL));
+
+                std::this_thread::sleep_for(std::chrono::microseconds(1000ULL));
+
+
+                GTEST_PRINT(std::setw(cellWidth) << clock.LapsedTime().AsMicroseconds() << std::setw(cellWidth) << clock.PausedTime().AsMicroseconds());
+
+                clock.Start();
+                pausedTime = clock.PausedTime();
+                EXPECT_TRUE(pausedTime >= Net::Microseconds(1000ULL));
+
+
+                GTEST_PRINT(std::setw(cellWidth) << clock.LapsedTime().AsMicroseconds() << std::setw(cellWidth) << clock.PausedTime().AsMicroseconds());
+
+                clock.Stop();
+                std::this_thread::sleep_for(std::chrono::microseconds(10000ULL));
+
+
+                GTEST_PRINT(std::setw(cellWidth) << clock.LapsedTime().AsMicroseconds() << std::setw(cellWidth) << clock.PausedTime().AsMicroseconds());
+
+                EXPECT_TRUE(clock.LapsedTime() >= Net::Microseconds(2000ULL));
+                EXPECT_TRUE(lapsedTime > clock.LapsedTime());
+
+                EXPECT_TRUE(clock.PausedTime() >= Net::Microseconds(2000ULL));
+                EXPECT_TRUE(pausedTime > clock.PausedTime());
+
+
+                lapsedTime = Net::Time::Zero;
+                pausedTime = Net::Time::Zero;
+                clock.Reset();
+            }
+        }*/
+    }
+
+    TEST(Clock, Paused)
+    {
+        {
+            Net::Clock clock;
+
+            const size_t cellWidth = 20;
+            GTEST_PRINT(std::setw(cellWidth) << "Lapsed" << std::setw(cellWidth) << "Paused");
+            GTEST_PRINT(std::setw(cellWidth) << clock.LapsedTime().AsMicroseconds() << std::setw(cellWidth) << clock.PausedTime().AsMicroseconds());
+
+                EXPECT_TRUE(clock.PausedTime() == Net::Milliseconds(0ULL));
+                EXPECT_TRUE(clock.LapsedTime() == Net::Milliseconds(0ULL));
+
+            clock.Start();
+            GTEST_PRINT(std::setw(cellWidth) << clock.LapsedTime().AsMicroseconds() << std::setw(cellWidth) << clock.PausedTime().AsMicroseconds());
+
+                EXPECT_TRUE(clock.PausedTime() == Net::Milliseconds(0ULL));
+                EXPECT_TRUE(clock.LapsedTime() >= Net::Milliseconds(0ULL));
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            clock.Stop();
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            GTEST_PRINT(std::setw(cellWidth) << clock.LapsedTime().AsMicroseconds() << std::setw(cellWidth) << clock.PausedTime().AsMicroseconds());
+
+                EXPECT_TRUE(clock.PausedTime() >= Net::Milliseconds(1ULL));
+                EXPECT_TRUE(clock.LapsedTime() >= Net::Milliseconds(1ULL));
+
+            clock.Start();
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            GTEST_PRINT(std::setw(cellWidth) << clock.LapsedTime().AsMicroseconds() << std::setw(cellWidth) << clock.PausedTime().AsMicroseconds());
+
+                EXPECT_TRUE(clock.PausedTime() >= Net::Milliseconds(1ULL));
+                EXPECT_TRUE(clock.LapsedTime() >= Net::Milliseconds(2ULL));
+
+            clock.Stop();
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            GTEST_PRINT(std::setw(cellWidth) << clock.LapsedTime().AsMicroseconds() << std::setw(cellWidth) << clock.PausedTime().AsMicroseconds());
+
+                EXPECT_TRUE(clock.PausedTime() >= Net::Milliseconds(2ULL));
+                EXPECT_TRUE(clock.LapsedTime() >= Net::Milliseconds(2ULL));
         }
     }
 
@@ -503,7 +599,7 @@ namespace Net
                 Net::Core::SocketSelector selector(&socket);
                 EXPECT_NO_THROW(socket.Open(12312, Net::Address::Ipv6));
                 EXPECT_EQ((int)socket.Send(sendData, sendSize, Net::SocketAddress(Net::Address::Loopback(Net::Address::Ipv6), 12312)), (int)sendSize );
-                std::cout << GTEST_PRINT << "Expected last error: " << Net::Core::GetLastSystemError() << std::endl;
+                GTEST_PRINT("Expected last error: " << Net::Core::GetLastSystemError());
                 EXPECT_TRUE(selector.Select(Net::Seconds(1.0f)));
             }
             {
@@ -564,7 +660,7 @@ namespace Net
                     EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
                     EXPECT_STREQ(data, "Hello world!");
                     EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv4);
-                    std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.AsString() << std::endl;
+                    GTEST_PRINT("Ip: " << socketAddress.Ip.AsString());
                 }
             }
             {
@@ -583,7 +679,7 @@ namespace Net
                     EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
                     EXPECT_STREQ(data, "Hello world!");
                     EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv6);
-                    std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.AsString() << std::endl;
+                    GTEST_PRINT("Ip: " << socketAddress.Ip.AsString());
                 }
             }
             {
@@ -602,7 +698,7 @@ namespace Net
                         EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
                         EXPECT_STREQ(data, "Hello world!");
                         EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv6);
-                        std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.AsString() << std::endl;
+                        GTEST_PRINT("Ip: " << socketAddress.Ip.AsString());
                     }
                 }
                 {
@@ -615,7 +711,7 @@ namespace Net
                         EXPECT_EQ(socket.Receive(data, 32, socketAddress), sendSize);
                         EXPECT_STREQ(data, "Hello world!");
                         EXPECT_EQ(socketAddress.Ip.GetType(), Net::Address::Ipv6);
-                        std::cout << GTEST_PRINT << "Ip: " << socketAddress.Ip.AsString() << std::endl;
+                        GTEST_PRINT("Ip: " << socketAddress.Ip.AsString());
                     }
                 }
 

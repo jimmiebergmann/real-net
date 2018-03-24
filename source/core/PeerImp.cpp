@@ -34,7 +34,7 @@ namespace Net
 
         PeerImp::PeerImp() :
             m_pServer(nullptr),
-            m_State(eState::Handshaking),
+            m_State(InternalHandshaking),
             m_Id(0),
             m_Timeout(0),
             m_pLatency(nullptr)
@@ -57,7 +57,18 @@ namespace Net
             m_SocketAddress = socketAddress;
             m_Timeout = timeout.AsMicroseconds();
             m_pLatency = new Latency(latencySamples);
+        }
 
+        void PeerImp::SetState(const eInternalState state)
+        {
+            Core::SafeGuard safe_State(m_State);
+
+            if(m_State.Value >= state)
+            {
+                return;
+            }
+
+            m_State.Value = state;
         }
 
 

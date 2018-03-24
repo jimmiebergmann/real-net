@@ -28,7 +28,6 @@
 
 namespace Net
 {
-
     Peer::Peer() :
         PeerImp()
     {
@@ -43,7 +42,7 @@ namespace Net
         return m_Id;
     }
 
-    void Peer::Disconnect()
+    void Peer::Kick()
     {
         m_pServer->DisconnectPeerByPointer(this);
     }
@@ -53,6 +52,18 @@ namespace Net
         return m_SocketAddress;
     }
 
+    Peer::eState Peer::State() const
+    {
+        Core::SafeGuard safe_State(m_State);
+
+        static const eState stateMap[4] =
+        {
+            Handshaking, Handshaking, Connected, Disconnected
+        };
+
+        return stateMap[m_State.Value];
+    }
+
     Time Peer::Latency() const
     {
         Time time;
@@ -60,9 +71,11 @@ namespace Net
         return time;
     }
 
-    Time Peer::ConnectedTime()
+    Time Peer::ConnectedTime() const
     {
-        if(m_State != Connected)
+        Core::SafeGuard safe_State(m_State);
+
+        if(m_State.Value != InternalConnected)
         {
             return Time::Zero;
         }

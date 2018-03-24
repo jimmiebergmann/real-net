@@ -108,7 +108,7 @@ namespace Net
         * @throw Exception If function already is set, or if the server is currently hosted.
         *
         */
-        void SetOnPeerDisconnect(const std::function<void(std::shared_ptr<Net::Peer> peer)> & function);
+        void SetOnPeerDisconnect(const std::function<void(std::shared_ptr<Net::Peer> peer, const Peer::eReason reason)> & function);
 
         /**
         * @breif Get current server settings.
@@ -134,7 +134,7 @@ namespace Net
         /**
         * @breif Trigger function called if peer disconnects.
         */
-        virtual void OnPeerDisconnect(std::shared_ptr<Net::Peer> peer);
+        virtual void OnPeerDisconnect(std::shared_ptr<Net::Peer> peer, const Peer::eReason reason);
 
     };
 

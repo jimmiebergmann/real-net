@@ -24,7 +24,6 @@
 */
 
 #include <core/ServerImp.hpp>
-#include <iostream>
 
 namespace Net
 {
@@ -44,21 +43,25 @@ namespace Net
         {
         }
 
-        void ServerImp::DisconnectPeerByPointer(Peer * peer)
+        void ServerImp::DisconnectPeerByPointer(Peer * peerPointer)
         {
-            std::map<SocketAddress, std::shared_ptr<Peer>>::iterator peerIt;
+            std::shared_ptr<Peer> peer;
 
             {
-                peerIt = m_Peers.find(peer->m_SocketAddress);
+                Core::SafeGuard sf_peers(m_PeersMutex);
+
+                auto peerIt = m_Peers.find(peerPointer->m_SocketAddress);
                 if(peerIt == m_Peers.end())
                 {
-                    throw Exception("Cannot find peer by raw pointer.");
+                    throw Exception("Cannot find peer by raw pointer: " + std::to_string(peerPointer->m_Id));
                     return;
                 }
 
+                peer = peerIt->second;
+
             }
 
-            DisconnectPeer(peerIt->second);
+            DisconnectPeer(peer);
 
         }
 

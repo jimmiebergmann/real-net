@@ -125,7 +125,7 @@ namespace Net
                     if(peerIt != m_Peers.end())
                     {
                         // New peers or not yet connected peers are only allowed to send connection packets.
-                        if(peerIt->second->m_State != Core::PeerImp::Connected && packetType != Core::Packet::ConnectionType)
+                        if(peerIt->second->m_State != Core::PeerImp::InternalConnected && packetType != Core::Packet::ConnectionType)
                         {
                             continue;
                         }
@@ -218,7 +218,7 @@ namespace Net
                     peer = pPacket->peer;
 
                     // Do not care about disconnecting peers
-                    if(peer && peer->m_State == Core::PeerImp::Disconnecting)
+                    if(peer && peer->m_State == Core::PeerImp::InternalDisconnected)
                     {
                         m_PacketPool.Return(pPacket);
                         pPacket = nullptr;
@@ -242,26 +242,45 @@ namespace Net
                                         break;
                                     }
 
-                                    // Send accpet packet, since it's already been accepted.
-                                    if(peer && (peer->m_State == Core::PeerImp::Accepted || peer->m_State == Core::PeerImp::Connected))
-                                    {
-                                        const unsigned long long receiveTime = REALNET_ENDIAN_64(pPacket->receiveTime.AsMicroseconds());
-                                        memcpy(acceptReponse + 4, &receiveTime, 8);
-                                        const unsigned long long sendTime = REALNET_ENDIAN_64(Clock::SystemTime().AsMicroseconds());
-                                        memcpy(acceptReponse + 12, &sendTime, 8);
+                                    Core::SafeGuard sf_peers(m_PeersMutex); ///< Mutex lock.
 
-                                        if(m_Socket.Send(acceptReponse, acceptReponseSize, peer->m_SocketAddress) != acceptReponseSize)
+                                    // Check if peer has been added.
+                                    // We need to do this check, because of synchronization between this thread and the packet receiving thread.
+                                    auto peerIt = m_Peers.find(pPacket->address);
+                                    if(peerIt != m_Peers.end())
+                                    {
+                                        peer = peerIt->second;
+                                    }
+
+
+                                    if(peer)
+                                    {
+                                        // Send accpet packet, since it's already been accepted.
+                                        if(peer->m_State == Core::PeerImp::InternalAccepted)
                                         {
-                                            std::cout << "Failed to send accept message." << std::endl;
-                                            DisconnectPeer(peer);
+                                            const unsigned long long receiveTime = REALNET_ENDIAN_64(pPacket->receiveTime.AsMicroseconds());
+                                            memcpy(acceptReponse + 4, &receiveTime, 8);
+                                            const Time serverDelay = Clock::SystemTime() - pPacket->receiveTime;
+                                            const unsigned long long sendTime = REALNET_ENDIAN_64(serverDelay.AsMicroseconds());
+                                            memcpy(acceptReponse + 12, &sendTime, 8);
+
+                                            if(m_Socket.Send(acceptReponse, acceptReponseSize, peer->m_SocketAddress) != acceptReponseSize)
+                                            {
+                                                std::cout << "Failed to send accept message." << std::endl;
+                                                DisconnectPeer(peer);
+                                                break;
+                                            }
+                                        }
+                                        // Ignore init packets, if connected,
+                                        else
+                                        {
                                             break;
                                         }
+
                                     }
                                     // New connection.
                                     else
                                     {
-                                        Core::SafeGuard sf_peers(m_PeersMutex);
-
                                         if(m_Peers.size() >= m_Settings.maxConnections)
                                         {
                                             if(m_Socket.Send(fullReponse, fullReponseSize, pPacket->address) != fullReponseSize)
@@ -273,6 +292,7 @@ namespace Net
 
                                         if(!peer)
                                         {
+                                            // Insert new peer.
                                             const unsigned int peerId = GetNextPeerId();
                                             peer = std::make_shared<Peer>();
                                             peer->Initialize(this, peerId, pPacket->address, m_Settings.timeout, m_Settings.latencySamples);
@@ -290,7 +310,7 @@ namespace Net
                                         break;
                                     }
 
-                                    if(peer->m_State == Core::PeerImp::Connected)
+                                    if(peer->m_State == Core::PeerImp::InternalConnected)
                                     {
                                         // Send ack.
                                         ackReponse[1] = 1;
@@ -302,11 +322,17 @@ namespace Net
                                             break;
                                         }
                                     }
-                                    else if(peer->m_State == Core::PeerImp::Accepted)
+                                    else if(peer->m_State == Core::PeerImp::InternalAccepted)
                                     {
+                                        Core::SafeGuard sf_peerConnection(m_PeerConnectMutex);
+
                                         // Caluclate initial latency.
                                         peer->m_Clock.Mutex.lock();
                                         const Time serverDelay = pPacket->receiveTime - peer->m_Clock.Value.StartTime();
+
+                                        auto tempAccept = peer->m_Clock.Value.StartTime();
+                                        auto tempReceiveTime = pPacket->receiveTime;
+
                                         peer->m_Clock.Mutex.unlock();
 
                                         unsigned long long tempPeerTime = 0;
@@ -322,15 +348,28 @@ namespace Net
                                         // Incorrect delay from peer.
                                         if(peerDelay > serverDelay)
                                         {
+                                            peer->m_Clock.Mutex.lock();
+                                            std::cout << "-------------------------" << std::endl;
+                                            std::cout << "Receive time: " << pPacket->receiveTime.AsMicroseconds() << std::endl;
+                                            std::cout << "Accepted time: " << peer->m_Clock.Value.StartTime().AsMicroseconds() << std::endl;
+                                            std::cout << "Temp receive time: " << tempReceiveTime.AsMicroseconds() << std::endl;
+                                            std::cout << "Temp accepted time: " << tempAccept.AsMicroseconds() << std::endl;
+                                            std::cout << "Server delay: " << serverDelay.AsMicroseconds() << std::endl;
+                                            std::cout << "Peer delay: " << peerDelay.AsMicroseconds() << std::endl;
+                                            std::cout << "-------------------------" << std::endl;
+                                            peer->m_Clock.Mutex.unlock();
+
                                             DisconnectPeer(peer);
                                             break;
                                         }
+
+                                        std::cout << "Delays - Diff: " << (serverDelay - peerDelay).AsMicroseconds() <<   " , Peer: " << peerDelay.AsMicroseconds() << " , Server: " << serverDelay.AsMicroseconds() << std::endl;
 
                                         // Send acception. Mutex protect, in order to check if peer disconnected while executing acception.
                                         {
                                             Core::SafeGuard sf_peers(m_PeerDisconnectMutex);
 
-                                            if(peer->m_State != Core::PeerImp::Accepted)
+                                            if(peer->m_State != Core::PeerImp::InternalAccepted)
                                             {
                                                 break;
                                             }
@@ -347,11 +386,11 @@ namespace Net
 
                                             const Time latency = serverDelay - peerDelay;
                                             peer->m_pLatency->Add(latency);
-                                            peer->m_State = Core::PeerImp::Connected;
+                                            peer->m_State = Core::PeerImp::InternalConnected;
 
-                                            peer->m_Clock.Mutex.lock();
+                                            /*peer->m_Clock.Mutex.lock();
                                             peer->m_Clock.Value.Start();
-                                            peer->m_Clock.Mutex.unlock();
+                                            peer->m_Clock.Mutex.unlock();*/
 
                                             m_TriggerQueue.Push(new Core::OnPeerConnectTrigger(peer));
                                         }
@@ -360,7 +399,7 @@ namespace Net
                                 break;
                                 case Core::Packet::ConnectionTypeReject:
                                 {
-                                    if(pPacket->size != 4 || !peer || peer->m_State != Core::PeerImp::Accepted || pPacket->sequence != 1)
+                                    if(pPacket->size != 4 || !peer || peer->m_State != Core::PeerImp::InternalAccepted || pPacket->sequence != 1)
                                     {
                                         break;
                                     }
@@ -399,7 +438,10 @@ namespace Net
                                 break;
                             }
 
-                            DisconnectPeer(peer);
+                            if(peer)
+                            {
+                                DisconnectPeer(peer);
+                            }
                         }
                         break;
                         default:
@@ -504,29 +546,46 @@ namespace Net
                     {
                         Core::OnPeerPreConnectTrigger * pCastTrigger = static_cast<Core::OnPeerPreConnectTrigger *>(pTrigger);
 
-                        // Call trigger
-                        bool acceptPeer = false;
-                        if(m_OnPeerPreConnect)
+                        if(pCastTrigger->peer->m_State == Core::PeerImp::InternalDisconnected)
                         {
-                            acceptPeer = m_OnPeerPreConnect(pCastTrigger->peer);
-                        }
-                        else
-                        {
-                            acceptPeer = OnPeerPreConnect(pCastTrigger->peer);
+                            break;
                         }
 
-                        if(acceptPeer)
+                        // Call trigger
+                        bool acceptPeer = true;
+                        if(pCastTrigger->peer->m_State == Core::PeerImp::InternalHandshaking)
                         {
-                            pCastTrigger->peer->m_State = Core::PeerImp::Accepted;
+                            if(m_OnPeerPreConnect)
+                            {
+                                acceptPeer = m_OnPeerPreConnect(pCastTrigger->peer);
+                            }
+                            else
+                            {
+                                acceptPeer = OnPeerPreConnect(pCastTrigger->peer);
+                            }
+                        }
+
+                        if(acceptPeer && pCastTrigger->peer->m_State != Core::PeerImp::InternalDisconnected)
+                        {
+                            Core::SafeGuard sf_peerConnection(m_PeerConnectMutex);
+
+                            pCastTrigger->peer->m_Clock.Mutex.lock();
+                            if(pCastTrigger->peer->m_State != Core::PeerImp::InternalAccepted)
+                            {
+                                pCastTrigger->peer->m_Clock.Value.Start();
+                                pCastTrigger->peer->m_State = Core::PeerImp::InternalAccepted;
+                            }
+                            const Time & acceptTime = pCastTrigger->peer->m_Clock.Value.StartTime();
+                            std::cout << "Accepting peer " << pCastTrigger->peer->m_Id << " at time " << acceptTime.AsMicroseconds() << std::endl;
+                            pCastTrigger->peer->m_Clock.Mutex.unlock();
+
+                            std::cout << "Setting peer " << pCastTrigger->peer->m_Id << " state from " << pCastTrigger->peer->m_State.Value << " to " << Core::PeerImp::InternalAccepted << std::endl;
+
+
 
                             // Send accpet packet.
                             const unsigned long long receiveTime = REALNET_ENDIAN_64(pCastTrigger->receiveTime.AsMicroseconds());
                             memcpy(acceptReponse + 4, &receiveTime, 8);
-
-                            pCastTrigger->peer->m_Clock.Mutex.lock();
-                            pCastTrigger->peer->m_Clock.Value.Start();
-                            const Time & acceptTime = pCastTrigger->peer->m_Clock.Value.StartTime();
-                            pCastTrigger->peer->m_Clock.Mutex.unlock();
 
                             const unsigned long long sendTime = REALNET_ENDIAN_64(acceptTime.AsMicroseconds());
                             memcpy(acceptReponse + 12, &sendTime, 8);
@@ -537,10 +596,7 @@ namespace Net
                                 std::cout << "Failed to send accept message." << std::endl;
                             }
 
-                            Core::SafeGuard sf_peers(m_PeersMutex);
-                            m_HandshakingPeers.insert(pCastTrigger->peer);
                             m_ConnectionThreadSemaphore.NotifyOne();
-
                         }
                         else
                         {
@@ -567,28 +623,26 @@ namespace Net
                     {
                         Core::OnPeerDisconnectTrigger * pCastTrigger = static_cast<Core::OnPeerDisconnectTrigger *>(pTrigger);
 
-                        if(pCastTrigger->lastState == Core::PeerImp::Connected   ||
-                           pCastTrigger->lastState == Core::PeerImp::Handshaking ||
-                           pCastTrigger->lastState == Core::PeerImp::Accepted)
+                        const unsigned char disconnectData[4] =
                         {
-                            const unsigned char disconnectData[4] =
-                            {
-                                Core::Packet::DisconnectionType, 1, 0, Core::Packet::DisconnectionTypeKicked
-                            };
+                            Core::Packet::DisconnectionType, 1, 0, Core::Packet::DisconnectionTypeKicked
+                        };
 
-                            if(m_Socket.Send(disconnectData, 4, pCastTrigger->peer->m_SocketAddress) != 4)
+                        if(m_Socket.Send(disconnectData, 4, pCastTrigger->peer->m_SocketAddress) != 4)
+                        {
+                            std::cout << "Failed to send disconnect message." << std::endl;
+                        }
+
+                        if(pCastTrigger->lastState != Core::PeerImp::InternalDisconnected)
+                        {
+                            if(m_OnPeerDisconnect)
                             {
-                                std::cout << "Failed to send disconnect message." << std::endl;
+                                m_OnPeerDisconnect(pCastTrigger->peer);
                             }
-                        }
-
-                        if(m_OnPeerDisconnect)
-                        {
-                            m_OnPeerDisconnect(pCastTrigger->peer);
-                        }
-                        else
-                        {
-                            OnPeerDisconnect(pCastTrigger->peer);
+                            else
+                            {
+                                OnPeerDisconnect(pCastTrigger->peer);
+                            }
                         }
                     }
                     break;
@@ -693,32 +747,33 @@ namespace Net
 
     void Server::DisconnectPeer(std::shared_ptr<Peer> peer)
     {
-        if(!peer)
-        {
-            return;
-        }
-
         Core::SafeGuard sf_peerDisconnect(m_PeerDisconnectMutex);
 
-        if(peer->m_State == Core::PeerImp::Disconnecting)
+        if(peer->m_State == Core::PeerImp::InternalDisconnected)
         {
             return;
         }
 
+        Core::PeerImp::eInternalState lastState = peer->m_State.Value;
+
         {
-            Core::SafeGuard sf_peers(m_PeersMutex);
+            Core::SafeGuard sf_peers(m_PeersMutex); ///< Mutex lock
 
             auto peerIt = m_Peers.find(peer->m_SocketAddress);
             if(peerIt != m_Peers.end())
             {
+                auto peerId = peer->m_Id;
                 m_PeerIds.erase(peer->m_Id);
                 m_Peers.erase(peerIt);
+
+                std::cout << "Erased peer in disconnect: " << peerId << std::endl;
             }
 
-            m_TriggerQueue.Push(new Core::OnPeerDisconnectTrigger(peer, peer->m_State));
+            lastState = peer->m_State.Value;
+            peer->m_State = Core::PeerImp::InternalDisconnected;
         }
 
-        peer->m_State = Core::PeerImp::Disconnecting;
+        m_TriggerQueue.Push(new Core::OnPeerDisconnectTrigger(peer, lastState));
     }
 
     void Server::SetPeerTimeout(std::shared_ptr<Peer> peer, const Time & timeout)
@@ -730,7 +785,7 @@ namespace Net
     {
         Core::SafeGuard sf_HostStop(m_HostStopMutex);
 
-        if(m_OnPeerPreConnect != nullptr)
+        if(m_OnPeerPreConnect)
         {
             throw Exception("Cannot call SetOnPeerPreConnect twice.");
         }
@@ -747,7 +802,7 @@ namespace Net
     {
         Core::SafeGuard sf_HostStop(m_HostStopMutex);
 
-        if(m_OnPeerConnect != nullptr)
+        if(m_OnPeerConnect)
         {
             throw Exception("Cannot call SetOnPeerConnect twice.");
         }
@@ -760,11 +815,11 @@ namespace Net
         m_OnPeerConnect = function;
     }
 
-    void Server::SetOnPeerDisconnect(const std::function<void(std::shared_ptr<Net::Peer> peer)> & function)
+    void Server::SetOnPeerDisconnect(const std::function<void(std::shared_ptr<Net::Peer> peer, const Peer::eReason reason)> & function)
     {
         Core::SafeGuard sf_HostStop(m_HostStopMutex);
 
-        if(m_OnPeerDisconnect != nullptr)
+        if(m_OnPeerDisconnect)
         {
             throw Exception("Cannot call SetOnPeerDisconnect twice.");
         }
@@ -791,7 +846,7 @@ namespace Net
     {
     }
 
-    void Server::OnPeerDisconnect(std::shared_ptr<Net::Peer> peer)
+    void Server::OnPeerDisconnect(std::shared_ptr<Net::Peer> peer, const Peer::eReason reason)
     {
     }
 
